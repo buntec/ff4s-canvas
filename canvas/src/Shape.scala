@@ -1,6 +1,6 @@
 package ff4s.canvas
 
-import org.scalajs.dom.CanvasRenderingContext2D
+import cats.syntax.all.*
 
 enum Direction:
   case Up, Down
@@ -20,21 +20,18 @@ enum Shape:
 object Shape:
 
   given Drawable[Shape] = new Drawable[Shape]:
-    def draw(shape: Shape, at: Point)(using
-        ctx: CanvasRenderingContext2D
-    ): Unit =
+    def draw(shape: Shape, at: Point): Draw[Unit] =
+      import dsl.*
       shape match
         case Circle(radius, stroke, fill) =>
-          ctx.save()
-          ctx.beginPath()
-          ctx.arc(at.x, at.y, radius, 0, 2 * math.Pi, false)
-          stroke.foreach: color =>
-            ctx.strokeStyle = color.toString
-            ctx.stroke()
-          fill.foreach: color =>
-            ctx.fillStyle = color.toString
-            ctx.fill()
-          ctx.restore()
+          for
+            _ <- save
+            _ <- beginPath
+            _ <- arc(at.x, at.y, radius, 0, 2 * math.Pi, false)
+            _ <- stroke.foldMapM(color => strokeStyle(color) *> dsl.stroke)
+            _ <- fill.foldMapM(color => fillStyle(color) *> dsl.fill)
+            _ <- restore
+          yield ()
 
         case EquitlateralTriangle(
               sideLength,
@@ -55,16 +52,15 @@ object Shape:
           val y2 = y1 + sign * h
           val x3 = x1 + l / 2
           val y3 = y1 + sign * h
-          ctx.save()
-          ctx.beginPath()
-          ctx.moveTo(x1, y1)
-          ctx.lineTo(x2, y2)
-          ctx.lineTo(x3, y3)
-          ctx.lineTo(x1, y1)
-          stroke.foreach: color =>
-            ctx.strokeStyle = color.toString
-            ctx.stroke()
-          fill.foreach: color =>
-            ctx.fillStyle = color.toString
-            ctx.fill()
-          ctx.restore()
+          for
+            _ <- save
+            _ <- beginPath
+            _ <- moveTo(x1, y1)
+            _ <- lineTo(x2, y2)
+            _ <- lineTo(x3, y3)
+            _ <- lineTo(x1, y1)
+            _ <- stroke.foldMapM(color => strokeStyle(color) *> dsl.stroke)
+            _ <- fill.foldMapM(color => fillStyle(color) *> dsl.fill)
+            _ <- dsl.fill
+            _ <- restore
+          yield ()
