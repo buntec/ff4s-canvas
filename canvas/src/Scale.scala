@@ -27,7 +27,7 @@ object Scale:
     def length = math.abs(max - min)
 
   def linear(d: Domain, r: Range): Option[Scale] =
-    (d.min != d.max && r.min != r.max)
+    (d.length != 0 && r.length != 0)
       .guard[Option]
       .as(
         new Scale:
@@ -44,4 +44,25 @@ object Scale:
           def withRange(range: Range): Option[Scale] = linear(d, range)
 
           def withDomain(domain: Domain): Option[Scale] = linear(domain, r)
+      )
+
+  def sqrt(d: Domain, r: Range): Option[Scale] =
+    (d.length != 0 && r.length != 0)
+      .guard[Option]
+      .as(new Scale:
+        def range: Range = r
+
+        def domain: Domain = d
+
+        def apply(x: Double): Double = r.min + r.length * (math.sqrt(x) - math
+          .sqrt(d.min)) / (math.sqrt(d.max) - math.sqrt(d.min))
+
+        def inverse(y: Double): Double =
+          val sqrtX = math.sqrt(d.min) + (y - r.min) * (math
+            .sqrt(d.max) - math.sqrt(d.min)) / r.length
+          sqrtX * sqrtX
+
+        def withRange(range: Range): Option[Scale] = sqrt(d, range)
+
+        def withDomain(domain: Domain): Option[Scale] = sqrt(domain, r)
       )
