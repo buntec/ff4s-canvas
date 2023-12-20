@@ -16,6 +16,8 @@ enum Shape:
 
 object Shape:
 
+  private val SQRT_3 = math.sqrt(3)
+
   given Drawable[Shape] = new Drawable[Shape]:
     def draw(shape: Shape, at: Point): Draw[Unit] =
       import dsl.*
@@ -38,7 +40,7 @@ object Shape:
               fill
             ) =>
           val l = sideLength
-          val h = l * math.sqrt(3) / 2
+          val h = l * SQRT_3 / 2
           val sign = direction match
             case Direction.Up   => 1
             case Direction.Down => -1

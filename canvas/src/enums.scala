@@ -11,3 +11,11 @@ enum TextBaseline:
 
 enum Direction:
   case Up, Down
+
+opaque type DOMHighResTimeStamp = Double
+
+object DOMHighResTimeStamp:
+
+  private[canvas] def apply(t: Double): DOMHighResTimeStamp = t
+
+  extension (t: DOMHighResTimeStamp) def toMillis: Double = t

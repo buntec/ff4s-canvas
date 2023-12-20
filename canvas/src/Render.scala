@@ -14,15 +14,13 @@ def loop[F[_], D](
     canvas: dom.HTMLCanvasElement,
     dispatcher: Dispatcher[F],
     getData: F[D],
-    drawFrame: (Double, D) => Draw[Unit], // (time, data)
+    drawFrame: (DOMHighResTimeStamp, D) => Draw[Unit], // (time, data)
     config: Compiler.Config
 )(using F: Async[F]): Resource[F, Unit] =
   Stream
     .eval(
       F.delay((canvas.offsetWidth, canvas.offsetHeight))
-        .flatMap(
-          SignallingRef.of[F, (Double, Double)](_)
-        )
+        .flatMap(SignallingRef.of[F, (Double, Double)](_))
     )
     .flatTap: sizeRef =>
       Stream
@@ -52,7 +50,7 @@ def loop[F[_], D](
               getData.flatMap: data =>
                 F.delay:
                   setup.foldMap(compiler)
-                  drawFrame(t, data).foldMap(compiler)
+                  drawFrame(DOMHighResTimeStamp(t), data).foldMap(compiler)
                   cleanup.foldMap(compiler)
                   if (keepGoing) {
                     dom.window.requestAnimationFrame(draw _): Unit
