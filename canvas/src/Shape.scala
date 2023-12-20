@@ -2,14 +2,11 @@ package ff4s.canvas
 
 import cats.syntax.all.*
 
-enum Direction:
-  case Up, Down
-
 enum Shape:
 
   case Circle(radius: Double, stroke: Option[Color], fill: Option[Color])
 
-  case EquitlateralTriangle(
+  case EquilateralTriangle(
       sideLength: Double,
       centered: Boolean,
       direction: Direction,
@@ -33,7 +30,7 @@ object Shape:
             _ <- restore
           yield ()
 
-        case EquitlateralTriangle(
+        case EquilateralTriangle(
               sideLength,
               centered,
               direction,

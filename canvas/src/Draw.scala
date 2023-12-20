@@ -4,15 +4,6 @@ import cats.Monad
 import cats.free.Free
 import cats.free.Free.*
 
-enum FillRule:
-  case Nonzero, EvenOdd
-
-enum TextAlign:
-  case Start, End, Left, Right, Center
-
-enum TextBaseline:
-  case Top, Middle, Bottom
-
 sealed trait DrawA[A]
 
 object DrawA:
