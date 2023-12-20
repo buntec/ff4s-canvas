@@ -14,42 +14,49 @@ enum TextBaseline:
   case Top, Middle, Bottom
 
 sealed trait DrawA[A]
-case class Save() extends DrawA[Unit]
-case class Restore() extends DrawA[Unit]
-case class BeginPath() extends DrawA[Unit]
-case class Clip() extends DrawA[Unit]
-case class Fill() extends DrawA[Unit]
-case class FillStyle(color: Color) extends DrawA[Unit]
-case class Stroke() extends DrawA[Unit]
-case class StrokeStyle(color: Color) extends DrawA[Unit]
-case class ClearRect(x: Double, y: Double, w: Double, h: Double)
-    extends DrawA[Unit]
-case class Arc(
-    x: Double,
-    y: Double,
-    radius: Double,
-    startAngle: Double,
-    endAngle: Double,
-    counterclockwise: Boolean
-) extends DrawA[Unit]
-case class MoveTo(x: Double, y: Double) extends DrawA[Unit]
-case class LineTo(x: Double, y: Double) extends DrawA[Unit]
-case class IsPointInPath(x: Double, y: Double, fillRule: FillRule)
-    extends DrawA[Boolean]
-case class LineWidth(width: Double) extends DrawA[Unit]
-case class Font(font: String) extends DrawA[Unit]
-case class SetTextAlign(align: TextAlign) extends DrawA[Unit]
-case class SetTextBaseline(baseline: TextBaseline) extends DrawA[Unit]
-case class FillText(
-    text: String,
-    x: Double,
-    y: Double,
-    maxWidth: Option[Double]
-) extends DrawA[Unit]
+
+object DrawA:
+  case class Save() extends DrawA[Unit]
+  case class Restore() extends DrawA[Unit]
+  case class BeginPath() extends DrawA[Unit]
+  case class Clip() extends DrawA[Unit]
+  case class Fill() extends DrawA[Unit]
+  case class SetFillStyle(color: Color) extends DrawA[Unit]
+  case class Stroke() extends DrawA[Unit]
+  case class SetStrokeStyle(color: Color) extends DrawA[Unit]
+  case class ClearRect(x: Double, y: Double, w: Double, h: Double)
+      extends DrawA[Unit]
+  case class Arc(
+      x: Double,
+      y: Double,
+      radius: Double,
+      startAngle: Double,
+      endAngle: Double,
+      counterclockwise: Boolean
+  ) extends DrawA[Unit]
+  case class MoveTo(x: Double, y: Double) extends DrawA[Unit]
+  case class LineTo(x: Double, y: Double) extends DrawA[Unit]
+  case class IsPointInPath(x: Double, y: Double, fillRule: FillRule)
+      extends DrawA[Boolean]
+  case class SetLineWidth(width: Double) extends DrawA[Unit]
+  case class SetFont(font: String) extends DrawA[Unit]
+  case class SetTextAlign(align: TextAlign) extends DrawA[Unit]
+  case class SetTextBaseline(baseline: TextBaseline) extends DrawA[Unit]
+  case class FillText(
+      text: String,
+      x: Double,
+      y: Double,
+      maxWidth: Option[Double]
+  ) extends DrawA[Unit]
+  case class Translate(x: Double, y: Double) extends DrawA[Unit]
+  case class Scale(x: Double, y: Double) extends DrawA[Unit]
+  case class GetMousePos() extends DrawA[Point]
+  case class GetTransform() extends DrawA[Transform]
 
 type Draw[A] = Free[DrawA, A]
 
 object dsl:
+  import DrawA.*
 
   def pure[A](a: A): Draw[A] = Monad[Draw].pure(a)
 
@@ -65,10 +72,11 @@ object dsl:
 
   val stroke: Draw[Unit] = liftF[DrawA, Unit](Stroke())
 
-  def fillStyle(color: Color): Draw[Unit] = liftF[DrawA, Unit](FillStyle(color))
+  def fillStyle(color: Color): Draw[Unit] =
+    liftF[DrawA, Unit](SetFillStyle(color))
 
   def strokeStyle(color: Color): Draw[Unit] =
-    liftF[DrawA, Unit](StrokeStyle(color))
+    liftF[DrawA, Unit](SetStrokeStyle(color))
 
   def clearRect(x: Double, y: Double, w: Double, h: Double): Draw[Unit] =
     liftF[DrawA, Unit](ClearRect(x, y, w, h))
@@ -99,10 +107,10 @@ object dsl:
     )
 
   def lineWidth(width: Double): Draw[Unit] =
-    liftF[DrawA, Unit](LineWidth(width))
+    liftF[DrawA, Unit](SetLineWidth(width))
 
   def font(font: String): Draw[Unit] =
-    liftF[DrawA, Unit](Font(font))
+    liftF[DrawA, Unit](SetFont(font))
 
   def textAlign(align: TextAlign): Draw[Unit] =
     liftF[DrawA, Unit](SetTextAlign(align))
@@ -117,3 +125,13 @@ object dsl:
       maxWidth: Option[Double] = None
   ): Draw[Unit] =
     liftF[DrawA, Unit](FillText(text, x, y, maxWidth))
+
+  def translate(x: Double, y: Double): Draw[Unit] =
+    liftF[DrawA, Unit](Translate(x, y))
+
+  def scale(x: Double, y: Double): Draw[Unit] =
+    liftF[DrawA, Unit](Scale(x, y))
+
+  val mousePos: Draw[Point] = liftF[DrawA, Point](GetMousePos())
+
+  val transform: Draw[Transform] = liftF[DrawA, Transform](GetTransform())
