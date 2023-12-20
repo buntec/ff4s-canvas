@@ -3,7 +3,8 @@ package mouse
 
 import org.scalajs.dom
 
-private[canvas] def getPos(ev: dom.MouseEvent)(using
+private[canvas] def getPos(
+    ev: dom.MouseEvent,
     ctx: dom.CanvasRenderingContext2D
 ): Point =
   val bb = ctx.canvas.getBoundingClientRect()

@@ -41,8 +41,12 @@ object DrawA:
   ) extends DrawA[Unit]
   case class Translate(x: Double, y: Double) extends DrawA[Unit]
   case class Scale(x: Double, y: Double) extends DrawA[Unit]
+
+  // custom
   case class GetMousePos() extends DrawA[Point]
   case class GetTransform() extends DrawA[Transform]
+  case class GetEffectiveWidth() extends DrawA[Double]
+  case class GetEffectiveHeight() extends DrawA[Double]
 
 type Draw[A] = Free[DrawA, A]
 
@@ -126,3 +130,9 @@ object dsl:
   val mousePos: Draw[Point] = liftF[DrawA, Point](GetMousePos())
 
   val transform: Draw[Transform] = liftF[DrawA, Transform](GetTransform())
+
+  val effectiveWidth: Draw[Double] =
+    liftF[DrawA, Double](GetEffectiveWidth())
+
+  val effectiveHeight: Draw[Double] =
+    liftF[DrawA, Double](GetEffectiveHeight())

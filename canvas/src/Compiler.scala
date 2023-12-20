@@ -7,46 +7,53 @@ import org.scalajs.dom
 
 private[canvas] object Compiler:
 
+  case class Config(
+      minZoom: Double = 0.2,
+      maxZoom: Double = 5.0,
+      zoomSensitivity: Double = 0.002,
+      relMargin: Double = 0.01
+  )
+
   def apply(
       canvas: dom.HTMLCanvasElement,
       initialWidth: Int,
-      initialHeight: Int
+      initialHeight: Int,
+      config: Config
   ): DrawA ~> Id =
 
     canvas.width = initialWidth
     canvas.height = initialHeight
 
-    val zoomSensitivity = 0.002
-    val minZoom = 0.2
-    val maxZoom = 5
+    val ctx: dom.CanvasRenderingContext2D =
+      canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
 
     val width = canvas.width
-    val heigh = canvas.height
-    val marginLeft = 0.025 * width
-    val marginTop = 0.025 * heigh
-    val marginTransform = Transform.translate(marginLeft, marginTop)
+    val height = canvas.height
+    val marginLeft = config.relMargin * width
+    val marginRight = config.relMargin * width
+    val marginTop = config.relMargin * height
+    val marginBottom = config.relMargin * height
+
+    val effectiveWidth = width - marginLeft - marginRight
+    val effectiveHeight = height - marginTop - marginBottom
 
     var transform = Transform.identity
+    val marginTransform = Transform.translate(marginLeft, marginTop)
     var mousePos = Point(0, 0)
     var mouseDown = false
     var dragStartPos = Point(0, 0)
     var transformOnDragStart = transform
 
-    given ctx: dom.CanvasRenderingContext2D =
-      canvas
-        .getContext("2d")
-        .asInstanceOf[dom.CanvasRenderingContext2D]
-
     def onMouseDown(ev: dom.MouseEvent): Unit =
       mouseDown = true
       transformOnDragStart = transform
-      dragStartPos = mouse.getPos(ev)
+      dragStartPos = mouse.getPos(ev, ctx)
 
     def onMouseUp(): Unit =
       mouseDown = false
 
     def onMouseMove(ev: dom.MouseEvent) =
-      mousePos = mouse.getPos(ev)
+      mousePos = mouse.getPos(ev, ctx)
       if (mouseDown) {
         val deltaX = mousePos.x - dragStartPos.x
         val deltaY = mousePos.y - dragStartPos.y
@@ -73,11 +80,11 @@ private[canvas] object Compiler:
         ev.preventDefault()
         if (!mouseDown) {
           val wev = ev.asInstanceOf[dom.WheelEvent]
-          val p = marginTransform.invert(mouse.getPos(wev))
-          val scroll = -1 * wev.deltaY * zoomSensitivity
+          val p = marginTransform.invert(mouse.getPos(wev, ctx))
+          val scroll = -1 * wev.deltaY * config.zoomSensitivity
           if (
-            scroll > 0 && transform.k < maxZoom ||
-            scroll < 0 && transform.k > minZoom
+            scroll > 0 && transform.k < config.maxZoom ||
+            scroll < 0 && transform.k > config.minZoom
           ) {
             transform = transform
               .andThen(Transform.translate(-p.x, -p.y))
@@ -88,16 +95,20 @@ private[canvas] object Compiler:
     )
 
     new ~>[DrawA, Id]:
-      def apply[A](fa: DrawA[A]): Id[A] = {
+      def apply[A](da: DrawA[A]): Id[A] =
         import DrawA.*
-        fa match
-          case GetTransform() => transform
-          case GetMousePos()  => mousePos
-          case Save()         => ctx.save()
-          case Restore()      => ctx.restore()
-          case BeginPath()    => ctx.beginPath()
-          case Clip()         => ctx.clip()
-          case Fill()         => ctx.fill()
+        da match
+          // custom
+          case GetEffectiveWidth()  => effectiveWidth
+          case GetEffectiveHeight() => effectiveHeight
+          case GetTransform()       => transform
+          case GetMousePos()        => mousePos
+          // canvas ctx
+          case Save()      => ctx.save()
+          case Restore()   => ctx.restore()
+          case BeginPath() => ctx.beginPath()
+          case Clip()      => ctx.clip()
+          case Fill()      => ctx.fill()
           case SetFillStyle(color) => {
             ctx.fillStyle = color.toString
           }
@@ -143,4 +154,3 @@ private[canvas] object Compiler:
           }
           case Translate(x, y) => ctx.translate(x, y)
           case Scale(x, y)     => ctx.scale(x, y)
-      }
