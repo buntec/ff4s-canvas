@@ -10,12 +10,19 @@ import fs2.concurrent.SignallingRef
 import fs2.dom.ResizeObserver
 import org.scalajs.dom
 
+case class Settings(
+    minZoom: Double = 0.2,
+    maxZoom: Double = 5.0,
+    zoomSensitivity: Double = 0.002,
+    relMargin: Double = 0.01
+)
+
 def loop[F[_], D](
     canvas: dom.HTMLCanvasElement,
     dispatcher: Dispatcher[F],
     getData: F[D],
     drawFrame: (DOMHighResTimeStamp, D) => Draw[Unit], // (time, data)
-    config: Compiler.Config
+    config: Settings
 )(using F: Async[F]): Resource[F, Unit] =
   Stream
     .eval(

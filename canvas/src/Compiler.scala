@@ -7,18 +7,11 @@ import org.scalajs.dom
 
 private[canvas] object Compiler:
 
-  case class Config(
-      minZoom: Double = 0.2,
-      maxZoom: Double = 5.0,
-      zoomSensitivity: Double = 0.002,
-      relMargin: Double = 0.01
-  )
-
   def apply(
       canvas: dom.HTMLCanvasElement,
       initialWidth: Int,
       initialHeight: Int,
-      config: Config
+      settings: render.Settings
   ): DrawA ~> Id =
 
     canvas.width = initialWidth
@@ -29,10 +22,10 @@ private[canvas] object Compiler:
 
     val width = canvas.width
     val height = canvas.height
-    val marginLeft = config.relMargin * width
-    val marginRight = config.relMargin * width
-    val marginTop = config.relMargin * height
-    val marginBottom = config.relMargin * height
+    val marginLeft = settings.relMargin * width
+    val marginRight = settings.relMargin * width
+    val marginTop = settings.relMargin * height
+    val marginBottom = settings.relMargin * height
 
     val effectiveWidth = width - marginLeft - marginRight
     val effectiveHeight = height - marginTop - marginBottom
@@ -81,10 +74,10 @@ private[canvas] object Compiler:
         if (!mouseDown) {
           val wev = ev.asInstanceOf[dom.WheelEvent]
           val p = marginTransform.invert(mouse.getPos(wev, ctx))
-          val scroll = -1 * wev.deltaY * config.zoomSensitivity
+          val scroll = -1 * wev.deltaY * settings.zoomSensitivity
           if (
-            scroll > 0 && transform.k < config.maxZoom ||
-            scroll < 0 && transform.k > config.minZoom
+            scroll > 0 && transform.k < settings.maxZoom ||
+            scroll < 0 && transform.k > settings.minZoom
           ) {
             transform = transform
               .andThen(Transform.translate(-p.x, -p.y))
