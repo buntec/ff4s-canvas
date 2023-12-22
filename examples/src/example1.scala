@@ -29,8 +29,6 @@ object Action {
 
 class App[F[_]](implicit val F: Async[F]) extends ff4s.App[F, State, Action] {
 
-  private val window = fs2.dom.Window[F]
-
   override val store = for {
 
     dispatcher <- Dispatcher.sequential[F]
@@ -44,21 +42,58 @@ class App[F[_]](implicit val F: Async[F]) extends ff4s.App[F, State, Action] {
     )
 
     getData = F.delay {
-      println("hi")
       (scala.math.random(), scala.math.random())
     }
 
-    drawFrame = (t: ff4s.canvas.DOMHighResTimeStamp, xy: (Double, Double)) => {
-      import ff4s.canvas.dsl.*
+    drawFrame = (t: canvas.DOMHighResTimeStamp, xy: (Double, Double)) => {
+      import canvas.dsl.*
+      val m = t.toMillis / 1000
       for {
         _ <- save
-        _ <- (ff4s.canvas.Shape
+        w <- effectiveWidth
+        h <- effectiveHeight
+        _ = println(s"w=$w, h=$h")
+        xScale0 = canvas.Scale
+          .linear(
+            canvas.Scale.Domain(0, 10),
+            canvas.Scale.Range(0, w)
+          )
+          .get
+        yScale0 = canvas.Scale
+          .linear(
+            canvas.Scale.Domain(0, 10),
+            canvas.Scale.Range(0, h)
+          )
+          .get
+        trans <- transform
+        xScale = trans.rescaleX(xScale0).get
+        yScale = trans.rescaleY(yScale0).get
+        axes = canvas.Axes(
+          0.8 * w,
+          0.8 * h,
+          0.05 * w,
+          xScale,
+          yScale,
+          20,
+          20,
+          "normal 100 12px system-ui",
+          canvas.Color.Keyword("gray"),
+          canvas.Color.Keyword("black"),
+          canvas.Color.Keyword("gray")
+        )
+        _ <- axes.draw(canvas.Point(0, 0))
+        _ <- (canvas.Shape
           .Circle(
             50,
-            ff4s.canvas.Color.Keyword("black").some,
-            ff4s.canvas.Color.Keyword("blue").some
-          ): ff4s.canvas.Shape)
-          .draw(ff4s.canvas.Point(xy(0) * 800, xy(1) * 500))
+            canvas.Color.Keyword("black").some,
+            canvas.Color.Keyword("blue").some
+          ): canvas.Shape)
+          .draw(
+            ff4s.canvas.Point(
+              xScale(5 + 5 * math.sin(m * 2 * math.Pi)),
+              yScale(5 + 5 * math.cos(m * 2 * math.Pi))
+            )
+          )
         _ <- restore
       } yield ()
     }

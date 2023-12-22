@@ -97,11 +97,14 @@ private[canvas] object Compiler:
           case GetTransform()       => transform
           case GetMousePos()        => mousePos
           // canvas ctx
-          case Save()      => ctx.save()
-          case Restore()   => ctx.restore()
+          case Save() => ctx.save()
+
+          case Restore() => ctx.restore()
+
           case BeginPath() => ctx.beginPath()
-          case Clip()      => ctx.clip()
-          case Fill()      => ctx.fill()
+
+          case Clip() => ctx.clip()
+          case Fill() => ctx.fill()
           case SetFillStyle(color) => {
             ctx.fillStyle = color.toString
           }
@@ -128,8 +131,10 @@ private[canvas] object Compiler:
             )
           case MoveTo(x, y) => ctx.moveTo(x, y)
           case LineTo(x, y) => ctx.lineTo(x, y)
+
           case IsPointInPath(x, y, fillRule) =>
             ctx.isPointInPath(x, y)
+
           case SetLineWidth(width) => {
             ctx.lineWidth = width
           }
@@ -137,10 +142,22 @@ private[canvas] object Compiler:
             ctx.font = font
           }
           case SetTextAlign(align) => {
-            ctx.textAlign = align.toString
+            ctx.textAlign = align match
+              case TextAlign.Start  => "start"
+              case TextAlign.End    => "end"
+              case TextAlign.Left   => "left"
+              case TextAlign.Right  => "right"
+              case TextAlign.Center => "center"
+
           }
           case SetTextBaseline(baseline) => {
-            ctx.textBaseline = baseline.toString
+            ctx.textBaseline = baseline match
+              case TextBaseline.Top         => "top"
+              case TextBaseline.Middle      => "middle"
+              case TextBaseline.Bottom      => "bottom"
+              case TextBaseline.Hanging     => "hanging"
+              case TextBaseline.Ideographic => "ideographic"
+              case TextBaseline.Alphabetic  => "alphabetic"
           }
           case FillText(text, x, y, maxWidth) => {
             ctx.fillText(text, x, y)

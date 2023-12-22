@@ -7,7 +7,7 @@ enum TextAlign:
   case Start, End, Left, Right, Center
 
 enum TextBaseline:
-  case Top, Middle, Bottom
+  case Top, Middle, Bottom, Hanging, Alphabetic, Ideographic
 
 enum Direction:
   case Up, Down
