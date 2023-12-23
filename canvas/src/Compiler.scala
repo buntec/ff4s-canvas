@@ -32,6 +32,7 @@ private[canvas] object Compiler:
 
     var transform = Transform.identity
     val marginTransform = Transform.translate(marginLeft, marginTop)
+
     var mousePos = Point(0, 0)
     var mouseDown = false
     var dragStartPos = Point(0, 0)

@@ -1,6 +1,7 @@
 package ff4s.canvas
 
 import cats.syntax.all.*
+import org.scalajs.dom.CanvasRenderingContext2D
 
 case class Transform(x: Double, y: Double, k: Double):
 
@@ -18,6 +19,10 @@ case class Transform(x: Double, y: Double, k: Double):
   def andThen(t: Transform): Transform = t.after(this)
 
   def applyToCtx: Draw[Unit] = dsl.translate(x, y) *> dsl.scale(k, k)
+
+  private[canvas] def applyToCtx(ctx: CanvasRenderingContext2D): Unit =
+    ctx.translate(x, y)
+    ctx.scale(k, k)
 
   def rescaleX(scale: Scale): Option[Scale] =
     val range = Scale.Range(invertX(scale.range.min), invertX(scale.range.max))

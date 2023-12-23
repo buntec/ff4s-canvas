@@ -56,9 +56,8 @@ def loop[F[_], D](
             dispatcher.unsafeRunAndForget(
               getData.flatMap: data =>
                 F.delay:
-                  setup.foldMap(compiler)
-                  drawFrame(DOMHighResTimeStamp(t), data).foldMap(compiler)
-                  cleanup.foldMap(compiler)
+                  (setup *> drawFrame(DOMHighResTimeStamp(t), data) *> cleanup)
+                    .foldMap(compiler)
                   if (keepGoing) {
                     dom.window.requestAnimationFrame(draw _): Unit
                   }

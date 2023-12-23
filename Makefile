@@ -20,8 +20,11 @@ watch-compile-examples:
 watch-package-examples:
 	scala-cli --power package --js ./examples -o ./examples/main.js --force --js-mode dev --js-module-kind none --watch
 
+package-examples:
+	scala-cli --power package --js ./examples -o ./examples/main.js --force --js-mode release --js-module-kind none --watch
+
 publish-local:
-	scala-cli --power publish local ./canvas --workspace .
+	scala-cli --power publish local ./canvas
 
 clean:
 	git clean -xdf

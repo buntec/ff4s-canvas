@@ -8,4 +8,4 @@
 //> using options -deprecation -feature -explain -Wunused:all -Ykind-projector:underscores
 //> using publish.organization io.github.buntec
 //> using publish.name ff4s-canvas
-//> using publish.computeVersion git:tag
+//> using publish.version "0.0.1"
