@@ -50,9 +50,8 @@ class App[F[_]](implicit val F: Async[F]) extends ff4s.App[F, State, Action] {
       val m = t.toMillis / 1000
       for {
         _ <- save
-        w <- effectiveWidth
-        h <- effectiveHeight
-        _ = println(s"w=$w, h=$h")
+        w <- width
+        h <- height
         xScale0 = canvas.Scale
           .linear(
             canvas.Scale.Domain(0, 10),
@@ -62,26 +61,27 @@ class App[F[_]](implicit val F: Async[F]) extends ff4s.App[F, State, Action] {
         yScale0 = canvas.Scale
           .linear(
             canvas.Scale.Domain(0, 10),
-            canvas.Scale.Range(0, h)
+            canvas.Scale.Range(h, 0)
           )
           .get
         trans <- transform
         xScale = trans.rescaleX(xScale0).get
         yScale = trans.rescaleY(yScale0).get
-        axes = canvas.Axes(
-          0.8 * w,
-          0.8 * h,
-          0.05 * w,
-          xScale,
-          yScale,
-          20,
-          20,
-          "normal 100 12px system-ui",
-          canvas.Color.Keyword("gray"),
-          canvas.Color.Keyword("black"),
-          canvas.Color.Keyword("gray")
-        )
-        _ <- axes.draw(canvas.Point(0, 0))
+        _ <- canvas
+          .Axes(
+            w,
+            h,
+            0.01 * w,
+            xScale,
+            yScale,
+            20,
+            20,
+            "normal 100 12px system-ui",
+            canvas.Color.Keyword("gray"),
+            canvas.Color.Keyword("black"),
+            canvas.Color.Keyword("gray")
+          )
+          .draw(canvas.Point(30, 30))
         _ <- (canvas.Shape
           .Circle(
             50,
@@ -110,7 +110,9 @@ class App[F[_]](implicit val F: Async[F]) extends ff4s.App[F, State, Action] {
               dispatcher,
               getData,
               drawFrame,
-              ff4s.canvas.render.Settings()
+              ff4s.canvas.render.Settings(
+                relMargin = 0.05
+              )
             )
           )
           .evalMap(_ => F.never)

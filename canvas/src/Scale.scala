@@ -20,11 +20,11 @@ trait Scale:
 
 object Scale:
 
-  case class Domain(min: Double, max: Double):
-    def length = math.abs(max - min)
+  case class Domain(x1: Double, x2: Double):
+    def length = x2 - x1
 
-  case class Range(min: Double, max: Double):
-    def length = math.abs(max - min)
+  case class Range(x1: Double, x2: Double):
+    def length = x2 - x1
 
   def linear(d: Domain, r: Range): Option[Scale] =
     (d.length != 0 && r.length != 0)
@@ -32,10 +32,10 @@ object Scale:
       .as(
         new Scale:
           def apply(x: Double): Double =
-            r.min + (x - d.min) / d.length * r.length
+            r.x1 + (x - d.x1) / d.length * r.length
 
           def inverse(y: Double): Double =
-            d.min + (y - r.min) / r.length * d.length
+            d.x1 + (y - r.x1) / r.length * d.length
 
           def range: Range = r
 
@@ -54,12 +54,12 @@ object Scale:
 
         def domain: Domain = d
 
-        def apply(x: Double): Double = r.min + r.length * (math.sqrt(x) - math
-          .sqrt(d.min)) / (math.sqrt(d.max) - math.sqrt(d.min))
+        def apply(x: Double): Double = r.x1 + r.length * (math.sqrt(x) - math
+          .sqrt(d.x1)) / (math.sqrt(d.x2) - math.sqrt(d.x1))
 
         def inverse(y: Double): Double =
-          val sqrtX = math.sqrt(d.min) + (y - r.min) * (math
-            .sqrt(d.max) - math.sqrt(d.min)) / r.length
+          val sqrtX = math.sqrt(d.x1) + (y - r.x1) * (math.sqrt(d.x2) - math
+            .sqrt(d.x1)) / r.length
           sqrtX * sqrtX
 
         def withRange(range: Range): Option[Scale] = sqrt(d, range)

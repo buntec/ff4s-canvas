@@ -13,7 +13,7 @@ import org.scalajs.dom
 case class Settings(
     minZoom: Double = 0.2,
     maxZoom: Double = 5.0,
-    zoomSensitivity: Double = 0.002,
+    zoomSensitivity: Double = 0.001,
     relMargin: Double = 0.01
 )
 
@@ -48,7 +48,7 @@ def loop[F[_], D](
             val setup = (
               dsl.save,
               dsl.clearRect(0, 0, width, height),
-              // marginTransform.applyToCtx
+              dsl.marginTransform.flatMap(_.applyToCtx)
             ).tupled
 
             val cleanup = dsl.restore

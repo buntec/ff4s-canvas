@@ -25,15 +25,15 @@ case class Transform(x: Double, y: Double, k: Double):
     ctx.scale(k, k)
 
   def rescaleX(scale: Scale): Option[Scale] =
-    val range = Scale.Range(invertX(scale.range.min), invertX(scale.range.max))
+    val range = Scale.Range(invertX(scale.range.x1), invertX(scale.range.x2))
     val domain =
-      Scale.Domain(scale.inverse(range.min), scale.inverse(range.max))
+      Scale.Domain(scale.inverse(range.x1), scale.inverse(range.x2))
     scale.withDomain(domain)
 
   def rescaleY(scale: Scale): Option[Scale] =
-    val range = Scale.Range(invertY(scale.range.min), invertY(scale.range.max))
+    val range = Scale.Range(invertY(scale.range.x1), invertY(scale.range.x2))
     val domain =
-      Scale.Domain(scale.inverse(range.min), scale.inverse(range.max))
+      Scale.Domain(scale.inverse(range.x1), scale.inverse(range.x2))
     scale.withDomain(domain)
 
   def inverse: Transform = Transform(-x / k, -y / k, 1 / k)

@@ -22,17 +22,18 @@ private[canvas] object Compiler:
 
     val width = canvas.width
     val height = canvas.height
-    val marginLeft = settings.relMargin * width
-    val marginRight = settings.relMargin * width
-    val marginTop = settings.relMargin * height
-    val marginBottom = settings.relMargin * height
 
-    val effectiveWidth = width - marginLeft - marginRight
-    val effectiveHeight = height - marginTop - marginBottom
+    val marginTop = height * settings.relMargin
+    val marginBottom = height * settings.relMargin
+    val marginLeft = width * settings.relMargin
+    val marginRight = width * settings.relMargin
 
-    var transform = Transform.identity
+    val effectiveWidth = (width - marginLeft - marginRight).toInt
+    val effectiveHeight = (height - marginTop - marginBottom).toInt
+
     val marginTransform = Transform.translate(marginLeft, marginTop)
 
+    var transform = Transform.identity
     var mousePos = Point(0, 0)
     var mouseDown = false
     var dragStartPos = Point(0, 0)
@@ -74,7 +75,7 @@ private[canvas] object Compiler:
         ev.preventDefault()
         if (!mouseDown) {
           val wev = ev.asInstanceOf[dom.WheelEvent]
-          val p = marginTransform.invert(mouse.getPos(wev, ctx))
+          val p = marginTransform.inverse(mouse.getPos(wev, ctx))
           val scroll = -1 * wev.deltaY * settings.zoomSensitivity
           if (
             scroll > 0 && transform.k < settings.maxZoom ||
@@ -93,10 +94,12 @@ private[canvas] object Compiler:
         import DrawA.*
         da match
           // custom
-          case GetEffectiveWidth()  => effectiveWidth
-          case GetEffectiveHeight() => effectiveHeight
+          case GetWidth()           => effectiveWidth
+          case GetHeight()          => effectiveHeight
           case GetTransform()       => transform
           case GetMousePos()        => mousePos
+          case GetMarginTransform() => marginTransform
+
           // canvas ctx
           case Save() => ctx.save()
 
