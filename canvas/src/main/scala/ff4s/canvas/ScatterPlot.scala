@@ -3,12 +3,12 @@ package ff4s.canvas
 import cats.effect.kernel.Async
 import cats.effect.kernel.Resource
 import cats.effect.std.Dispatcher
+import cats.kernel.Eq
 import cats.syntax.all.*
 import ff4s.canvas.syntax.*
+import fs2.concurrent.Signal
 import fs2.dom.Dom
 import fs2.dom.HtmlCanvasElement
-import fs2.concurrent.Signal
-import cats.kernel.Eq
 
 object ScatterPlot:
 

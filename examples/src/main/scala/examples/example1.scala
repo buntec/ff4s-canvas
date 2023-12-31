@@ -3,12 +3,12 @@ package example1
 import cats.effect.Async
 import cats.effect.implicits._
 import cats.effect.std.Dispatcher
+import cats.kernel.Eq
 import cats.syntax.all._
 import ff4s.canvas
 import fs2.Stream
 import fs2.dom.Dom
 import org.http4s.Uri
-import cats.kernel.Eq
 
 case class State[F[_]](
     uri: Option[Uri] = None,

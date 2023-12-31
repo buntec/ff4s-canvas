@@ -4,15 +4,15 @@ package render
 import cats.effect.*
 import cats.effect.implicits.*
 import cats.effect.std.Dispatcher
+import cats.kernel.Eq
 import cats.syntax.all.*
 import fs2.Stream
+import fs2.concurrent.Signal
 import fs2.concurrent.SignallingRef
 import fs2.dom.Dom
 import fs2.dom.HtmlCanvasElement
 import fs2.dom.ResizeObserver
 import org.scalajs.dom
-import fs2.concurrent.Signal
-import cats.kernel.Eq
 
 case class Settings(
     minZoom: Double = 0.2,
