@@ -1,4 +1,4 @@
-# ff4s-canvas
+# ff4s-canvas :chart_with_upwards_trend:
 
 Create canvas-based interactive charts in a purely functional way.
 
