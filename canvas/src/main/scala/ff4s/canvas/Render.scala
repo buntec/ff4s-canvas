@@ -30,14 +30,18 @@ import fs2.dom.HtmlCanvasElement
 import fs2.dom.ResizeObserver
 import org.scalajs.dom
 
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.*
+
 case class Settings(
     minZoom: Double = 0.2,
     maxZoom: Double = 5.0,
     zoomSensitivity: Double = 0.001,
-    relMargin: Double = 0.01
+    relMargin: Double = 0.01,
+    transitionDuration: FiniteDuration = 500.millis
 )
 
-def loop[F[_]: Dom, D: Eq](
+def loop[F[_]: Dom, D: Eq: Transition](
     canvas: HtmlCanvasElement[F],
     dispatcher: Dispatcher[F],
     data: Signal[F, D],
@@ -72,6 +76,7 @@ def loop[F[_]: Dom, D: Eq](
       Stream
         .bracket(F.delay:
           var keepGoing = true
+          var handle: Option[Int] = None
 
           val compiler = Compiler(
             canvas.asInstanceOf[dom.HTMLCanvasElement],
@@ -90,18 +95,27 @@ def loop[F[_]: Dom, D: Eq](
             val cleanup = dsl.restore
 
             dispatcher.unsafeRunAndForget(
-              currentAndPrevData.get.flatMap: (data, _, _, _) =>
-                F.delay:
-                  (setup *> drawFrame(DOMHighResTimeStamp(t), data) *> cleanup)
-                    .foldMap(compiler)
-                  if (keepGoing) {
-                    dom.window.requestAnimationFrame(draw _): Unit
-                  }
+              (F.realTime, currentAndPrevData.get).flatMapN {
+                case (d0, (data, d, dataPrev, dPrev)) =>
+                  val u = (d0 - d) / config.transitionDuration
+                  val data0 = Transition[D](dataPrev, data, u)
+                  F.delay:
+                    (setup *> drawFrame(
+                      DOMHighResTimeStamp(t),
+                      data0
+                    ) *> cleanup)
+                      .foldMap(compiler)
+                    if (keepGoing) {
+                      handle = Some(dom.window.requestAnimationFrame(draw _))
+                    }
+              }
             )
 
           draw(0)
 
-          F.delay { keepGoing = false }
+          F.delay:
+            keepGoing = false
+            handle.foreach(dom.window.cancelAnimationFrame(_))
         )(identity)
         .evalMap(_ => F.never)
     }

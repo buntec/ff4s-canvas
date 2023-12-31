@@ -17,3 +17,9 @@
 package ff4s.canvas
 
 final case class Point(x: Double, y: Double)
+
+object Point:
+
+  given Transition[Point] = Transition.transition((p1, p2, t) =>
+    Point(t * p2.x + (1 - t) * p1.x, t * p2.y + (1 - t) * p1.y)
+  )

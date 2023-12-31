@@ -35,9 +35,12 @@ object ScatterPlot:
 
   object Trace:
     given Eq[Trace] = Eq.fromUniversalEquals
+    given Transition[Trace] = Transition.transition((tr1, tr2, t) =>
+      Trace(Transition[List[Point]](tr1.points, tr2.points, t), tr2.color)
+    )
 
   def apply[F[_]: Dom](
-      getTraces: Signal[F, List[Trace]],
+      traces: Signal[F, List[Trace]],
       elm: HtmlCanvasElement[F],
       dispatcher: Dispatcher[F]
   )(using F: Async[F]): Resource[F, Unit] =
@@ -106,7 +109,7 @@ object ScatterPlot:
     ff4s.canvas.render.loop(
       elm,
       dispatcher,
-      getTraces,
+      traces,
       drawFrame,
       ff4s.canvas.render.Settings(
         relMargin = 0.05
