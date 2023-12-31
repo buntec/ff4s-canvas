@@ -11,6 +11,8 @@ import fs2.dom.Dom
 import fs2.dom.HtmlCanvasElement
 import fs2.dom.ResizeObserver
 import org.scalajs.dom
+import fs2.concurrent.Signal
+import cats.kernel.Eq
 
 case class Settings(
     minZoom: Double = 0.2,
@@ -19,28 +21,38 @@ case class Settings(
     relMargin: Double = 0.01
 )
 
-def loop[F[_]: Dom, D](
+def loop[F[_]: Dom, D: Eq](
     canvas: HtmlCanvasElement[F],
     dispatcher: Dispatcher[F],
-    getData: F[D],
-    drawFrame: (DOMHighResTimeStamp, D) => Draw[Unit], // (time, data)
+    data: Signal[F, D],
+    drawFrame: (DOMHighResTimeStamp, D) => Draw[Unit],
     config: Settings
-)(using F: Async[F]): Resource[F, Unit] =
-  Stream
-    .eval(
-      (canvas.offsetWidth, canvas.offsetHeight).flatMapN((w, h) =>
-        SignallingRef.of[F, (Double, Double)]((w, h))
+)(using F: Async[F]): Resource[F, Unit] = for {
+
+  sizeRef <- (canvas.offsetWidth, canvas.offsetHeight)
+    .flatMapN((w, h) => SignallingRef.of[F, (Double, Double)]((w, h)))
+    .toResource
+
+  _ <- ResizeObserver[F]((a, _) =>
+    sizeRef.set((a.head.contentRect.width, a.head.contentRect.height))
+  ).evalTap(_.observe(canvas.asInstanceOf[fs2.dom.Element[F]]))
+
+  currentAndPrevData <- (data.get, F.realTime)
+    .flatMapN((d, t) => F.ref((d, t, d, t)))
+    .toResource
+
+  _ <- data.changes.discrete
+    .evalMap(d =>
+      F.realTime.flatMap(t =>
+        currentAndPrevData.update((d1, t1, _, _) => (d, t, d1, t1))
       )
     )
-    .flatTap: sizeRef =>
-      Stream
-        .resource(
-          ResizeObserver[F]((a, _) =>
-            sizeRef.set((a.head.contentRect.width, a.head.contentRect.height))
-          ).evalTap(_.observe(canvas.asInstanceOf[fs2.dom.Element[F]]))
-        )
-    .flatMap(_.discrete)
-    .switchMap: (width, height) =>
+    .compile
+    .drain
+    .background
+
+  _ <- sizeRef.discrete
+    .switchMap { (width, height) =>
       Stream
         .bracket(F.delay:
           var keepGoing = true
@@ -62,7 +74,7 @@ def loop[F[_]: Dom, D](
             val cleanup = dsl.restore
 
             dispatcher.unsafeRunAndForget(
-              getData.flatMap: data =>
+              currentAndPrevData.get.flatMap: (data, _, _, _) =>
                 F.delay:
                   (setup *> drawFrame(DOMHighResTimeStamp(t), data) *> cleanup)
                     .foldMap(compiler)
@@ -76,7 +88,9 @@ def loop[F[_]: Dom, D](
           F.delay { keepGoing = false }
         )(identity)
         .evalMap(_ => F.never)
+    }
     .compile
     .drain
     .background
-    .void
+
+} yield ()

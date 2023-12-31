@@ -8,6 +8,7 @@ import ff4s.canvas
 import fs2.Stream
 import fs2.dom.Dom
 import org.http4s.Uri
+import cats.kernel.Eq
 
 case class State[F[_]](
     uri: Option[Uri] = None,
@@ -53,7 +54,7 @@ class App[F[_]: Dom](implicit val F: Async[F])
       }
     )
 
-    getTraces = store.state.get.map { s =>
+    traces = store.state.map { s =>
       val points = s.data.getOrElse(Nil)
       val trace = ff4s.canvas.ScatterPlot
         .Trace(points, ff4s.canvas.Color.Keyword("green"))
@@ -64,21 +65,12 @@ class App[F[_]: Dom](implicit val F: Async[F])
       .map(_.canvas)
       .discrete
       .unNone
+      .changes(Eq.fromUniversalEquals)
       .switchMap(canvas =>
         Stream
-          .resource(
-            ff4s.canvas.ScatterPlot(getTraces)(canvas)
-          )
+          .resource(ff4s.canvas.ScatterPlot(traces, canvas, dispatcher))
           .evalMap(_ => F.never)
       )
-      .compile
-      .drain
-      .background
-
-    _ <- store.state.discrete
-      .evalMap { state =>
-        F.delay(println(s"state: $state"))
-      }
       .compile
       .drain
       .background

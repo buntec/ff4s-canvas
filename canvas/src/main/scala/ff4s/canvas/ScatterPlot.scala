@@ -7,6 +7,8 @@ import cats.syntax.all.*
 import ff4s.canvas.syntax.*
 import fs2.dom.Dom
 import fs2.dom.HtmlCanvasElement
+import fs2.concurrent.Signal
+import cats.kernel.Eq
 
 object ScatterPlot:
 
@@ -15,13 +17,16 @@ object ScatterPlot:
       color: Color
   )
 
+  object Trace:
+    given Eq[Trace] = Eq.fromUniversalEquals
+
   def apply[F[_]: Dom](
-      getTraces: F[List[Trace]]
-  )(elm: HtmlCanvasElement[F])(using F: Async[F]): Resource[F, Unit] = for {
+      getTraces: Signal[F, List[Trace]],
+      elm: HtmlCanvasElement[F],
+      dispatcher: Dispatcher[F]
+  )(using F: Async[F]): Resource[F, Unit] =
 
-    dispatcher <- Dispatcher.sequential[F]
-
-    drawFrame = (t: DOMHighResTimeStamp, traces: List[Trace]) => {
+    val drawFrame = (t: DOMHighResTimeStamp, traces: List[Trace]) => {
       import dsl.*
       val m = t.toMillis / 1000
       val nPoints = traces.map(_.points.length).sum
@@ -82,7 +87,7 @@ object ScatterPlot:
       else dsl.noop
     }
 
-    _ <- ff4s.canvas.render.loop(
+    ff4s.canvas.render.loop(
       elm,
       dispatcher,
       getTraces,
@@ -91,5 +96,3 @@ object ScatterPlot:
         relMargin = 0.05
       )
     )
-
-  } yield ()
