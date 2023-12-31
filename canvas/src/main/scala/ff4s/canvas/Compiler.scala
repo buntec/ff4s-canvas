@@ -117,22 +117,12 @@ private[canvas] object Compiler:
             ctx.strokeStyle = color.toString
           }
           case ClearRect(x, y, w, h) => ctx.clearRect(x, y, w, h)
-          case Arc(
-                x,
-                y,
-                radius,
-                startAngle,
-                endAngle,
-                counterclockwise
-              ) =>
-            ctx.arc(
-              x,
-              y,
-              radius,
-              startAngle,
-              endAngle,
-              counterclockwise
-            )
+
+          case Arc(x, y, radius, startAngle, endAngle, counterclockwise) =>
+            ctx.arc(x, y, radius, startAngle, endAngle, counterclockwise)
+
+          case Rect(x, y, width, height) => ctx.rect(x, y, width, height)
+
           case MoveTo(x, y) => ctx.moveTo(x, y)
           case LineTo(x, y) => ctx.lineTo(x, y)
 

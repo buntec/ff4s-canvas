@@ -17,6 +17,7 @@ object DrawA:
   case class SetStrokeStyle(color: Color) extends DrawA[Unit]
   case class ClearRect(x: Double, y: Double, w: Double, h: Double)
       extends DrawA[Unit]
+
   case class Arc(
       x: Double,
       y: Double,
@@ -25,6 +26,10 @@ object DrawA:
       endAngle: Double,
       counterclockwise: Boolean
   ) extends DrawA[Unit]
+
+  case class Rect(x: Double, y: Double, width: Double, height: Double)
+      extends DrawA[Unit]
+
   case class MoveTo(x: Double, y: Double) extends DrawA[Unit]
   case class LineTo(x: Double, y: Double) extends DrawA[Unit]
   case class IsPointInPath(x: Double, y: Double, fillRule: FillRule)
@@ -55,6 +60,8 @@ object dsl:
   import DrawA.*
 
   def pure[A](a: A): Draw[A] = Monad[Draw].pure(a)
+
+  val noop: Draw[Unit] = pure(())
 
   val save: Draw[Unit] = liftF[DrawA, Unit](Save())
 
@@ -101,6 +108,9 @@ object dsl:
     liftF[DrawA, Unit](
       Arc(x, y, radius, startAngle, endAngle, counterclockwise)
     )
+
+  def rect(x: Double, y: Double, width: Double, height: Double): Draw[Unit] =
+    liftF[DrawA, Unit](Rect(x, y, width, height))
 
   def lineWidth(width: Double): Draw[Unit] =
     liftF[DrawA, Unit](SetLineWidth(width))

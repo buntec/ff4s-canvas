@@ -9,12 +9,12 @@ import org.scalajs.dom
 import fs2.Stream
 
 import ff4s.canvas
-import ff4s.canvas.Drawable.*
 import cats.effect.std.Dispatcher
 
 case class State(
     uri: Option[Uri] = None,
-    canvas: Option[dom.HTMLCanvasElement] = None
+    canvas: Option[dom.HTMLCanvasElement] = None,
+    data: Option[List[ff4s.canvas.Point]] = None
 )
 
 sealed trait Action
@@ -25,6 +25,10 @@ object Action {
 
   case class SetCanvas(canvas: dom.HTMLCanvasElement) extends Action
 
+  case class SetData(data: List[ff4s.canvas.Point]) extends Action
+
+  case class RandomizeData() extends Action
+
 }
 
 class App[F[_]](implicit val F: Async[F]) extends ff4s.App[F, State, Action] {
@@ -33,69 +37,27 @@ class App[F[_]](implicit val F: Async[F]) extends ff4s.App[F, State, Action] {
 
     dispatcher <- Dispatcher.sequential[F]
 
-    store <- ff4s.Store[F, State, Action](State())(_ =>
+    nextDouble = F.delay(scala.util.Random.nextDouble())
+    nextPoint = (nextDouble, nextDouble).mapN((x, y) => ff4s.canvas.Point(x, y))
+
+    store <- ff4s.Store[F, State, Action](State())(store =>
       _ match {
         case Action.Noop => _ -> None
-        case Action.SetCanvas(canvas) =>
-          _.copy(canvas = canvas.some) -> None
+        case Action.RandomizeData() =>
+          _ -> nextPoint
+            .replicateA(10)
+            .flatMap(points => store.dispatch(Action.SetData(points)))
+            .some
+        case Action.SetData(points)   => _.copy(data = points.some) -> none
+        case Action.SetCanvas(canvas) => _.copy(canvas = canvas.some) -> none
       }
     )
 
-    getData = F.delay {
-      (scala.math.random(), scala.math.random())
-    }
-
-    drawFrame = (t: canvas.DOMHighResTimeStamp, xy: (Double, Double)) => {
-      import canvas.dsl.*
-      val m = t.toMillis / 1000
-      for {
-        _ <- save
-        w <- width
-        h <- height
-        xScale0 = canvas.Scale
-          .linear(
-            canvas.Scale.Domain(0, 10),
-            canvas.Scale.Range(0, w)
-          )
-          .get
-        yScale0 = canvas.Scale
-          .linear(
-            canvas.Scale.Domain(0, 10),
-            canvas.Scale.Range(h, 0)
-          )
-          .get
-        trans <- transform
-        xScale = trans.rescaleX(xScale0).get
-        yScale = trans.rescaleY(yScale0).get
-        _ <- canvas
-          .Axes(
-            w,
-            h,
-            0.01 * w,
-            xScale,
-            yScale,
-            20,
-            20,
-            "normal 100 12px system-ui",
-            canvas.Color.Keyword("gray"),
-            canvas.Color.Keyword("black"),
-            canvas.Color.Keyword("gray")
-          )
-          .draw(canvas.Point(30, 30))
-        _ <- (canvas.Shape
-          .Circle(
-            50,
-            canvas.Color.Keyword("black").some,
-            canvas.Color.Keyword("blue").some
-          ): canvas.Shape)
-          .draw(
-            ff4s.canvas.Point(
-              xScale(5 + 5 * math.sin(m * 2 * math.Pi)),
-              yScale(5 + 5 * math.cos(m * 2 * math.Pi))
-            )
-          )
-        _ <- restore
-      } yield ()
+    getTraces = store.state.get.map { s =>
+      val points = s.data.getOrElse(Nil)
+      val trace = ff4s.canvas.ScatterPlot
+        .Trace(points, ff4s.canvas.Color.Keyword("green"))
+      List(trace)
     }
 
     _ <- store.state
@@ -105,18 +67,18 @@ class App[F[_]](implicit val F: Async[F]) extends ff4s.App[F, State, Action] {
       .switchMap(canvas =>
         Stream
           .resource(
-            ff4s.canvas.render.loop(
-              canvas,
-              dispatcher,
-              getData,
-              drawFrame,
-              ff4s.canvas.render.Settings(
-                relMargin = 0.05
-              )
-            )
+            ff4s.canvas.ScatterPlot(getTraces)(canvas)
           )
           .evalMap(_ => F.never)
       )
+      .compile
+      .drain
+      .background
+
+    _ <- store.state.discrete
+      .evalMap { state =>
+        F.delay(println(s"state: $state"))
+      }
       .compile
       .drain
       .background
@@ -143,6 +105,12 @@ class App[F[_]](implicit val F: Async[F]) extends ff4s.App[F, State, Action] {
           insertHook := (el =>
             Action.SetCanvas(el.asInstanceOf[dom.HTMLCanvasElement])
           )
+        ),
+        button(
+          cls := "border rounded",
+          tpe := "button",
+          "randomize data",
+          onClick := (_ => Action.RandomizeData().some)
         )
       )
     )
