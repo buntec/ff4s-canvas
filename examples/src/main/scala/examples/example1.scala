@@ -2,14 +2,12 @@ package example1
 
 import cats.effect.Async
 import cats.effect.implicits._
-import cats.syntax.all._
-import org.http4s.Uri
-
-import org.scalajs.dom
-import fs2.Stream
-
-import ff4s.canvas
 import cats.effect.std.Dispatcher
+import cats.syntax.all._
+import ff4s.canvas
+import fs2.Stream
+import org.http4s.Uri
+import org.scalajs.dom
 
 case class State(
     uri: Option[Uri] = None,

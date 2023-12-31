@@ -1,12 +1,11 @@
 package ff4s.canvas
 
-import cats.effect.kernel.Resource
 import cats.effect.kernel.Async
-import org.scalajs.dom
+import cats.effect.kernel.Resource
 import cats.effect.std.Dispatcher
 import cats.syntax.all.*
-
 import ff4s.canvas.syntax.*
+import org.scalajs.dom
 
 object ScatterPlot:
 
