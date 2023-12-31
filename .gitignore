@@ -1,5 +1,6 @@
 .bsp/
 .metals/
 .scala-build/
-examples/main.js
-*.semanticdb
+.bloop/
+target/
+metals.sbt
