@@ -5,7 +5,8 @@ import cats.effect.kernel.Resource
 import cats.effect.std.Dispatcher
 import cats.syntax.all.*
 import ff4s.canvas.syntax.*
-import org.scalajs.dom
+import fs2.dom.Dom
+import fs2.dom.HtmlCanvasElement
 
 object ScatterPlot:
 
@@ -14,11 +15,9 @@ object ScatterPlot:
       color: Color
   )
 
-  def apply[F[_]](
+  def apply[F[_]: Dom](
       getTraces: F[List[Trace]]
-  )(
-      elm: dom.HTMLCanvasElement
-  )(using F: Async[F]): Resource[F, Unit] = for {
+  )(elm: HtmlCanvasElement[F])(using F: Async[F]): Resource[F, Unit] = for {
 
     dispatcher <- Dispatcher.sequential[F]
 

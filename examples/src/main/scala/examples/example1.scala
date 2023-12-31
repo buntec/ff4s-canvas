@@ -6,30 +6,32 @@ import cats.effect.std.Dispatcher
 import cats.syntax.all._
 import ff4s.canvas
 import fs2.Stream
+import fs2.dom.Dom
 import org.http4s.Uri
-import org.scalajs.dom
 
-case class State(
+case class State[F[_]](
     uri: Option[Uri] = None,
-    canvas: Option[dom.HTMLCanvasElement] = None,
+    canvas: Option[fs2.dom.HtmlCanvasElement[F]] = None,
     data: Option[List[ff4s.canvas.Point]] = None
 )
 
-sealed trait Action
+sealed trait Action[F[_]]
 
 object Action {
 
-  case object Noop extends Action
+  case class Noop[F[_]]() extends Action[F]
 
-  case class SetCanvas(canvas: dom.HTMLCanvasElement) extends Action
+  case class SetCanvas[F[_]](canvas: fs2.dom.HtmlCanvasElement[F])
+      extends Action[F]
 
-  case class SetData(data: List[ff4s.canvas.Point]) extends Action
+  case class SetData[F[_]](data: List[ff4s.canvas.Point]) extends Action[F]
 
-  case class RandomizeData() extends Action
+  case class RandomizeData[F[_]]() extends Action[F]
 
 }
 
-class App[F[_]](implicit val F: Async[F]) extends ff4s.App[F, State, Action] {
+class App[F[_]: Dom](implicit val F: Async[F])
+    extends ff4s.App[F, State[F], Action[F]] {
 
   override val store = for {
 
@@ -38,9 +40,9 @@ class App[F[_]](implicit val F: Async[F]) extends ff4s.App[F, State, Action] {
     nextDouble = F.delay(scala.util.Random.nextDouble())
     nextPoint = (nextDouble, nextDouble).mapN((x, y) => ff4s.canvas.Point(x, y))
 
-    store <- ff4s.Store[F, State, Action](State())(store =>
+    store <- ff4s.Store[F, State[F], Action[F]](State())(store =>
       _ match {
-        case Action.Noop => _ -> None
+        case Action.Noop() => _ -> None
         case Action.RandomizeData() =>
           _ -> nextPoint
             .replicateA(10)
@@ -101,7 +103,7 @@ class App[F[_]](implicit val F: Async[F]) extends ff4s.App[F, State, Action] {
           idAttr := "canvas",
           key := "my-canvas",
           insertHook := (el =>
-            Action.SetCanvas(el.asInstanceOf[dom.HTMLCanvasElement])
+            Action.SetCanvas(el.asInstanceOf[fs2.dom.HtmlCanvasElement[F]])
           )
         ),
         button(

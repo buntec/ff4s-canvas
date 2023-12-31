@@ -7,6 +7,8 @@ import cats.effect.std.Dispatcher
 import cats.syntax.all.*
 import fs2.Stream
 import fs2.concurrent.SignallingRef
+import fs2.dom.Dom
+import fs2.dom.HtmlCanvasElement
 import fs2.dom.ResizeObserver
 import org.scalajs.dom
 
@@ -17,8 +19,8 @@ case class Settings(
     relMargin: Double = 0.01
 )
 
-def loop[F[_], D](
-    canvas: dom.HTMLCanvasElement,
+def loop[F[_]: Dom, D](
+    canvas: HtmlCanvasElement[F],
     dispatcher: Dispatcher[F],
     getData: F[D],
     drawFrame: (DOMHighResTimeStamp, D) => Draw[Unit], // (time, data)
@@ -26,8 +28,9 @@ def loop[F[_], D](
 )(using F: Async[F]): Resource[F, Unit] =
   Stream
     .eval(
-      F.delay((canvas.offsetWidth, canvas.offsetHeight))
-        .flatMap(SignallingRef.of[F, (Double, Double)](_))
+      (canvas.offsetWidth, canvas.offsetHeight).flatMapN((w, h) =>
+        SignallingRef.of[F, (Double, Double)]((w, h))
+      )
     )
     .flatTap: sizeRef =>
       Stream
@@ -42,7 +45,12 @@ def loop[F[_], D](
         .bracket(F.delay:
           var keepGoing = true
 
-          val compiler = Compiler(canvas, width.toInt, height.toInt, config)
+          val compiler = Compiler(
+            canvas.asInstanceOf[dom.HTMLCanvasElement],
+            width.toInt,
+            height.toInt,
+            config
+          )
 
           def draw(t: Double): Unit =
             val setup = (
