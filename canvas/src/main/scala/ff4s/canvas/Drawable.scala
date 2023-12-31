@@ -22,3 +22,8 @@ trait Drawable[A]:
 object Drawable:
 
   def apply[A](using ev: Drawable[A]): Drawable[A] = ev
+
+trait DrawableSyntax:
+
+  extension [A: Drawable](a: A)
+    def draw(at: Point): Draw[Unit] = Drawable[A].draw(a, at)
