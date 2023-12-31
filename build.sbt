@@ -5,6 +5,8 @@ ThisBuild / tlBaseVersion := "0.0"
 lazy val scala3 = "3.3.1"
 ThisBuild / scalaVersion := scala3
 ThisBuild / crossScalaVersions := Seq(scala3)
+ThisBuild / semanticdbEnabled := true
+ThisBuild / semanticdbVersion := scalafixSemanticdb.revision
 
 ThisBuild / organization := "io.github.buntec"
 ThisBuild / organizationName := "buntec"
@@ -15,6 +17,8 @@ ThisBuild / developers := List(
   tlGitHubDev("buntec", "Christoph Bunte")
 )
 
+// no publishing
+ThisBuild / githubWorkflowPublishTargetBranches := Seq.empty
 ThisBuild / tlFatalWarnings := false
 
 lazy val scalajsDomVersion = "2.8.0"
@@ -24,6 +28,7 @@ lazy val catsEffectVersion = "3.5.2"
 lazy val fs2Version = "3.9.3"
 lazy val fs2DomVersion = "0.2.1"
 lazy val ff4sVersion = "0.18.0"
+lazy val monocleVersion = "3.2.0"
 
 lazy val root =
   tlCrossRootProject.aggregate(`ff4s-canvas`, examples)
@@ -51,8 +56,8 @@ lazy val examples = (project in file("examples"))
   .settings(
     scalaJSUseMainModuleInitializer := true,
     libraryDependencies ++= Seq(
-      "dev.optics" %%% "monocle-core" % "3.2.0",
-      "dev.optics" %%% "monocle-macro" % "3.2.0"
+      "dev.optics" %%% "monocle-core" % monocleVersion,
+      "dev.optics" %%% "monocle-macro" % monocleVersion
     )
   )
   .dependsOn(`ff4s-canvas`)
