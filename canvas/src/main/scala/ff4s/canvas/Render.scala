@@ -38,7 +38,8 @@ case class Settings(
     maxZoom: Double = 5.0,
     zoomSensitivity: Double = 0.001,
     relMargin: Double = 0.01,
-    transitionDuration: FiniteDuration = 500.millis
+    transitionDuration: FiniteDuration = 500.millis,
+    transitionEasing: Easing = Easing.CubicInOut
 )
 
 def loop[F[_]: Dom, D: Eq: Transition](
@@ -97,7 +98,8 @@ def loop[F[_]: Dom, D: Eq: Transition](
             dispatcher.unsafeRunAndForget(
               (F.realTime, currentAndPrevData.get).flatMapN {
                 case (d0, (data, d, dataPrev, dPrev)) =>
-                  val u = (d0 - d) / config.transitionDuration
+                  val u0 = (d0 - d) / config.transitionDuration
+                  val u = config.transitionEasing(u0)
                   val data0 = Transition[D](dataPrev, data, u)
                   F.delay:
                     (setup *> drawFrame(
