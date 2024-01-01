@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+package examples
 package example1
 
 import cats.effect.Async
@@ -73,7 +74,7 @@ class App[F[_]: Dom](implicit val F: Async[F])
     traces = store.state.map { s =>
       val points = s.data.getOrElse(Nil)
       val trace = ff4s.canvas.ScatterPlot
-        .Trace(points, ff4s.canvas.Color.Keyword("green"))
+        .Trace(points, ff4s.canvas.Color.Green)
       List(trace)
     }
 
@@ -96,30 +97,29 @@ class App[F[_]: Dom](implicit val F: Async[F])
   import dsl._
   import dsl.html._
 
-  val heading = h1(cls := "m-4 text-4xl", "Canvas")
+  object components extends Buttons[F, State[F], Action[F]]
+  import components.*
+
+  val heading = h1(cls := "m-4 text-3xl", "Examples")
 
   override val view = useState { state =>
     div(
-      cls := "flex flex-col items-center h-screen",
+      cls := "flex flex-col items-center h-screen bg-gray-800 text-gray-100 font-thin",
       heading,
       div(
-        cls := "m-2 flex flex-col items-center",
+        cls := "m-2 flex flex-col items-center gap-2",
+        h2(cls := "text-2xl", "Scatter Plot"),
         canvasTag(
           widthAttr := 800,
           heightAttr := 500,
-          cls := "border",
+          cls := "border rounded border-gray-500",
           idAttr := "canvas",
           key := "my-canvas",
           insertHook := (el =>
             Action.SetCanvas(el.asInstanceOf[fs2.dom.HtmlCanvasElement[F]])
           )
         ),
-        button(
-          cls := "border rounded",
-          tpe := "button",
-          "randomize data",
-          onClick := (_ => Action.RandomizeData().some)
-        )
+        btn("randomize", Action.RandomizeData())
       )
     )
   }

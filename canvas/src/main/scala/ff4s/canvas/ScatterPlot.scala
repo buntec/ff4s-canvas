@@ -85,9 +85,9 @@ object ScatterPlot:
             20,
             20,
             "normal 100 12px system-ui",
-            Color.Keyword("gray"),
-            Color.Keyword("black"),
-            Color.Keyword("silver")
+            Color.Gray,
+            Color.Black,
+            Color.Silver
           ).draw(Point(0, 0))
 
           // clip everything outside axes region
