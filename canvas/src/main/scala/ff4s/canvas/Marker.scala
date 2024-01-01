@@ -1,0 +1,88 @@
+package ff4s.canvas
+
+import cats.syntax.all.*
+
+enum Marker:
+  case Circle(size: Double, color: Color, fill: Boolean)
+  case Triangle(size: Double, color: Color, fill: Boolean)
+  case Square(size: Double, color: Color, fill: Boolean)
+  case Cross(size: Double, color: Color)
+
+  def withSize(size: Double): Marker = this match
+    case Circle(_, color, fill)   => Circle(size, color, fill)
+    case Triangle(_, color, fill) => Triangle(size, color, fill)
+    case Square(_, color, fill)   => Square(size, color, fill)
+    case Cross(_, color)          => Cross(size, color)
+
+  def withColor(color: Color): Marker = this match
+    case Circle(size, _, fill)   => Circle(size, color, fill)
+    case Triangle(size, _, fill) => Triangle(size, color, fill)
+    case Square(size, _, fill)   => Square(size, color, fill)
+    case Cross(size, _)          => Cross(size, color)
+
+  def toSize: Double = this match
+    case Circle(size, _, _)   => size
+    case Triangle(size, _, _) => size
+    case Square(size, _, _)   => size
+    case Cross(size, _)       => size
+
+  def toColor: Color = this match
+    case Circle(_, color, _)   => color
+    case Triangle(_, color, _) => color
+    case Square(_, color, _)   => color
+    case Cross(_, color)       => color
+
+object Marker:
+
+  given Drawable[Marker] = new Drawable[Marker]:
+    def draw(a: Marker, at: Point): Draw[Unit] =
+      a match
+        case Circle(size, color, fill) =>
+          Drawable[Shape].draw(
+            Shape.Circle(
+              size / 2,
+              color.some,
+              fill.guard[Option].as(color)
+            ),
+            at
+          )
+        case Triangle(size, color, fill) =>
+          Drawable[Shape].draw(
+            Shape.EquilateralTriangle(
+              size,
+              true,
+              Direction.Up,
+              color.some,
+              fill.guard[Option].as(color)
+            ),
+            at
+          )
+        case Square(size, color, fill) =>
+          Drawable[Shape].draw(
+            Shape.Rectangle(
+              size,
+              size,
+              true,
+              color.some,
+              fill.guard[Option].as(color)
+            ),
+            at
+          )
+
+        case Cross(size, color) =>
+          Drawable[Shape].draw(
+            Shape.Cross(
+              size,
+              color.some
+            ),
+            at
+          )
+
+  given Transition[Marker] = new Transition[Marker]:
+    def apply(a1: Marker, a2: Marker, t: Double): Marker =
+      val c1 = a1.toColor
+      val c2 = a2.toColor
+      val s1 = a1.toSize
+      val s2 = a2.toSize
+      a2.withColor(Transition[Color](c1, c2, t))
+        .withSize(Transition[Double](s1, s2, t))

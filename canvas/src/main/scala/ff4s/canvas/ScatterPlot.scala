@@ -28,18 +28,31 @@ import fs2.dom.HtmlCanvasElement
 
 object ScatterPlot:
 
+  final case class Config(
+      nXTicks: Int,
+      nYTicks: Int,
+      tickFont: String,
+      axisColor: Color,
+      textColor: Color,
+      gridColor: Color
+  )
+
   final case class Trace(
       points: List[Point],
-      color: Color
+      marker: Marker
   )
 
   object Trace:
     given Eq[Trace] = Eq.fromUniversalEquals
     given Transition[Trace] = Transition.transition((tr1, tr2, t) =>
-      Trace(Transition[List[Point]](tr1.points, tr2.points, t), tr2.color)
+      Trace(
+        Transition[List[Point]](tr1.points, tr2.points, t),
+        Transition[Marker](tr1.marker, tr2.marker, t)
+      )
     )
 
   def apply[F[_]: Dom](
+      config: Config,
       traces: Signal[F, List[Trace]],
       elm: HtmlCanvasElement[F],
       dispatcher: Dispatcher[F]
@@ -47,7 +60,6 @@ object ScatterPlot:
 
     val drawFrame = (t: DOMHighResTimeStamp, traces: List[Trace]) => {
       import dsl.*
-      val m = t.toMillis / 1000
       val nPoints = traces.map(_.points.length).sum
       if nPoints > 0 then
         val xMin = traces.flatMap(_.points.map(_.x)).min
@@ -82,12 +94,12 @@ object ScatterPlot:
             yTickSize,
             xScale,
             yScale,
-            20,
-            20,
-            "normal 100 12px system-ui",
-            Color.Gray,
-            Color.Black,
-            Color.Silver
+            config.nXTicks,
+            config.nYTicks,
+            config.tickFont,
+            config.axisColor,
+            config.textColor,
+            config.gridColor
           ).draw(Point(0, 0))
 
           // clip everything outside axes region
@@ -98,7 +110,7 @@ object ScatterPlot:
           _ <- traces.traverse_ { trace =>
             trace.points.traverse_ { point =>
               val point0 = Point(xScale(point.x), yScale(point.y))
-              (Shape.Circle(10, trace.color.some, None): Shape).draw(point0)
+              trace.marker.draw(point0)
             }
           }
           _ <- restore

@@ -30,6 +30,16 @@ enum Shape:
       fill: Option[Color]
   )
 
+  case Rectangle(
+      width: Double,
+      height: Double,
+      centered: Boolean,
+      stroke: Option[Color],
+      fill: Option[Color]
+  )
+
+  case Cross(sideLength: Double, stroke: Option[Color])
+
 object Shape:
 
   private val SQRT_3 = math.sqrt(3)
@@ -45,6 +55,19 @@ object Shape:
             _ <- arc(at.x, at.y, radius, 0, 2 * math.Pi, false)
             _ <- stroke.foldMapM(color => strokeStyle(color) *> dsl.stroke)
             _ <- fill.foldMapM(color => fillStyle(color) *> dsl.fill)
+            _ <- restore
+          yield ()
+
+        case Cross(sideLength, stroke) =>
+          val h = math.sqrt(2) * sideLength / 2
+          for
+            _ <- save
+            _ <- beginPath
+            _ <- moveTo(at.x - h, at.y - h)
+            _ <- lineTo(at.x + h, at.y + h)
+            _ <- moveTo(at.x + h, at.y - h)
+            _ <- lineTo(at.x - h, at.y + h)
+            _ <- stroke.foldMapM(color => strokeStyle(color) *> dsl.stroke)
             _ <- restore
           yield ()
 
@@ -77,5 +100,17 @@ object Shape:
             _ <- stroke.foldMapM(color => strokeStyle(color) *> dsl.stroke)
             _ <- fill.foldMapM(color => fillStyle(color) *> dsl.fill)
             _ <- dsl.fill
+            _ <- restore
+          yield ()
+
+        case Rectangle(width, height, centered, stroke, fill) =>
+          val x = if centered then at.x - width / 2 else at.x
+          val y = if centered then at.y - height / 2 else at.y
+          for
+            _ <- save
+            _ <- beginPath
+            _ <- rect(x, y, width, height)
+            _ <- stroke.foldMapM(color => strokeStyle(color) *> dsl.stroke)
+            _ <- fill.foldMapM(color => fillStyle(color) *> dsl.fill)
             _ <- restore
           yield ()

@@ -26,11 +26,24 @@ import ff4s.canvas
 import fs2.Stream
 import fs2.dom.Dom
 import org.http4s.Uri
+import ff4s.canvas.Color
+import ff4s.canvas.Marker
+import ff4s.canvas.ScatterPlot
+
+object scatter:
+  val config = canvas.ScatterPlot.Config(
+    nXTicks = 10,
+    nYTicks = 10,
+    tickFont = "normal 100 12px system-ui",
+    gridColor = Color.Gray,
+    textColor = Color.White,
+    axisColor = Color.Silver
+  )
 
 case class State[F[_]](
     uri: Option[Uri] = None,
     canvas: Option[fs2.dom.HtmlCanvasElement[F]] = None,
-    data: Option[List[ff4s.canvas.Point]] = None
+    scatterTraces: Option[List[ScatterPlot.Trace]] = None
 )
 
 sealed trait Action[F[_]]
@@ -42,7 +55,9 @@ object Action {
   case class SetCanvas[F[_]](canvas: fs2.dom.HtmlCanvasElement[F])
       extends Action[F]
 
-  case class SetData[F[_]](data: List[ff4s.canvas.Point]) extends Action[F]
+  case class SetScatterPlotData[F[_]](
+      traces: List[ScatterPlot.Trace]
+  ) extends Action[F]
 
   case class RandomizeData[F[_]]() extends Action[F]
 
@@ -57,25 +72,31 @@ class App[F[_]: Dom](implicit val F: Async[F])
 
     nextDouble = F.delay(scala.util.Random.nextDouble())
     nextPoint = (nextDouble, nextDouble).mapN((x, y) => ff4s.canvas.Point(x, y))
+    nextTrace = nextPoint
+      .replicateA(20)
+      .map(points =>
+        ff4s.canvas.ScatterPlot
+          .Trace(points, Marker.Circle(10, Color.Aquamarine, false))
+      )
 
     store <- ff4s.Store[F, State[F], Action[F]](State())(store =>
       _ match {
         case Action.Noop() => _ -> None
         case Action.RandomizeData() =>
-          _ -> nextPoint
-            .replicateA(10)
-            .flatMap(points => store.dispatch(Action.SetData(points)))
+          _ -> nextTrace
+            .replicateA(3)
+            .flatMap(traces =>
+              store.dispatch(Action.SetScatterPlotData(traces))
+            )
             .some
-        case Action.SetData(points)   => _.copy(data = points.some) -> none
+        case Action.SetScatterPlotData(traces) =>
+          _.copy(scatterTraces = traces.some) -> none
         case Action.SetCanvas(canvas) => _.copy(canvas = canvas.some) -> none
       }
     )
 
     traces = store.state.map { s =>
-      val points = s.data.getOrElse(Nil)
-      val trace = ff4s.canvas.ScatterPlot
-        .Trace(points, ff4s.canvas.Color.Green)
-      List(trace)
+      s.scatterTraces.getOrElse(Nil)
     }
 
     _ <- store.state
@@ -85,12 +106,16 @@ class App[F[_]: Dom](implicit val F: Async[F])
       .changes(Eq.fromUniversalEquals)
       .switchMap(canvas =>
         Stream
-          .resource(ff4s.canvas.ScatterPlot(traces, canvas, dispatcher))
+          .resource(
+            ff4s.canvas.ScatterPlot(scatter.config, traces, canvas, dispatcher)
+          )
           .evalMap(_ => F.never)
       )
       .compile
       .drain
       .background
+
+    _ <- store.dispatch(Action.RandomizeData()).toResource
 
   } yield store
 

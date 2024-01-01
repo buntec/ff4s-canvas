@@ -64,9 +64,8 @@ object Axes:
         _ <- lineTo(a.width, a.height - a.xTickSize)
         _ <- stroke
         _ <- beginPath
-        _ <- fillStyle(a.textColor)
-        _ <- strokeStyle(a.axisColor)
 
+        _ <- fillStyle(a.textColor)
         _ <- font(a.tickFont)
 
         // draw y-ticks

@@ -93,6 +93,8 @@ enum Color:
     case hsl @ Hsl(_, _, _) => hsl
     case other              => other.toRgb.toHsl
 
+  override def toString: String = toHex.hex
+
 object Color:
 
   def lerp(c1: Color, c2: Color, t: Double): Color =
