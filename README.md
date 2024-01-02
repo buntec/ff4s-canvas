@@ -1,6 +1,6 @@
 # ff4s-canvas :chart_with_upwards_trend:
 
-Create canvas-based interactive charts in a purely functional way.
+Create [canvas](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API)-based interactive charts the purely functional way.
 
 This is a small companion library to [ff4s](https://www.github.com/buntec/ff4s).
 
