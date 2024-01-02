@@ -31,7 +31,7 @@ object ScatterPlot:
   final case class Config(
       nXTicks: Int,
       nYTicks: Int,
-      tickFont: String,
+      tickFont: Font,
       axisColor: Color,
       textColor: Color,
       gridColor: Color

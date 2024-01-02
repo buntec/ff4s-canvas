@@ -51,7 +51,7 @@ object DrawA:
   case class IsPointInPath(x: Double, y: Double, fillRule: FillRule)
       extends DrawA[Boolean]
   case class SetLineWidth(width: Double) extends DrawA[Unit]
-  case class SetFont(font: String) extends DrawA[Unit]
+  case class SetFont(font: Font) extends DrawA[Unit]
   case class SetTextAlign(align: TextAlign) extends DrawA[Unit]
   case class SetTextBaseline(baseline: TextBaseline) extends DrawA[Unit]
   case class FillText(
@@ -131,7 +131,7 @@ object dsl:
   def lineWidth(width: Double): Draw[Unit] =
     liftF[DrawA, Unit](SetLineWidth(width))
 
-  def font(font: String): Draw[Unit] =
+  def font(font: Font): Draw[Unit] =
     liftF[DrawA, Unit](SetFont(font))
 
   def textAlign(align: TextAlign): Draw[Unit] =

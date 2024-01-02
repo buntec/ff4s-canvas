@@ -149,7 +149,7 @@ private[canvas] object Compiler:
             ctx.lineWidth = width
           }
           case SetFont(font) => {
-            ctx.font = font
+            ctx.font = font.show
           }
           case SetTextAlign(align) => {
             ctx.textAlign = align match

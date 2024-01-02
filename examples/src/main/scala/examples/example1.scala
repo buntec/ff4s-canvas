@@ -23,18 +23,17 @@ import cats.effect.std.Dispatcher
 import cats.kernel.Eq
 import cats.syntax.all._
 import ff4s.canvas
+import ff4s.canvas.*
 import fs2.Stream
 import fs2.dom.Dom
 import org.http4s.Uri
-import ff4s.canvas.Color
-import ff4s.canvas.Marker
-import ff4s.canvas.ScatterPlot
 
 object scatter:
   val config = canvas.ScatterPlot.Config(
     nXTicks = 10,
     nYTicks = 10,
-    tickFont = "normal 100 12px system-ui",
+    tickFont =
+      Font(FontSize.Px(12), FontFamily.SystemUI).withWeight(FontWeight.Thin),
     gridColor = Color.Gray,
     textColor = Color.White,
     axisColor = Color.Silver

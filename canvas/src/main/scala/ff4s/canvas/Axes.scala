@@ -27,7 +27,7 @@ final case class Axes(
     yScale: Scale,
     nXTicks: Int,
     nYTicks: Int,
-    tickFont: String,
+    tickFont: Font,
     axisColor: Color,
     textColor: Color,
     gridColor: Color
