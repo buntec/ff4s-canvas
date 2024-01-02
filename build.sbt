@@ -21,6 +21,8 @@ ThisBuild / developers := List(
 ThisBuild / githubWorkflowPublishTargetBranches := Seq.empty
 ThisBuild / tlFatalWarnings := false
 
+val site: TaskKey[Unit] = taskKey[Unit]("Generate static site")
+
 lazy val scalajsDomVersion = "2.8.0"
 lazy val circeVersion = "0.14.6"
 lazy val catsVersion = "2.10.0"
@@ -55,6 +57,14 @@ lazy val examples = (project in file("examples"))
   .enablePlugins(ScalaJSPlugin, NoPublishPlugin)
   .settings(
     scalaJSUseMainModuleInitializer := true,
+    site := {
+      val sourceDir1 = (Compile / fullLinkJSOutput).value
+      val sourceDir2 = baseDirectory.value / "assets"
+      val targetDir = target.value / "site"
+      IO.copyDirectory(sourceDir1, targetDir)
+      IO.copyDirectory(sourceDir2, targetDir)
+      targetDir
+    },
     libraryDependencies ++= Seq(
       "dev.optics" %%% "monocle-core" % monocleVersion,
       "dev.optics" %%% "monocle-macro" % monocleVersion
