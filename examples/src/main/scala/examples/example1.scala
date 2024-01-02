@@ -22,14 +22,13 @@ import cats.effect.implicits._
 import cats.effect.std.Dispatcher
 import cats.kernel.Eq
 import cats.syntax.all._
-import ff4s.canvas
 import ff4s.canvas.*
 import fs2.Stream
 import fs2.dom.Dom
 import org.http4s.Uri
 
 object scatter:
-  val config = canvas.ScatterPlot.Config(
+  val config = ScatterPlot.Config(
     nXTicks = 10,
     nYTicks = 10,
     tickFont =
@@ -39,10 +38,22 @@ object scatter:
     axisColor = Color.Silver
   )
 
+  val genTrace: Gen[ScatterPlot.Trace] =
+    for
+      nPoints <- Gen.between(5, 50)
+      points <- (Gen.between(0.0, 1.0), Gen.between(0.0, 1.0)).tupled
+        .replicateA(nPoints)
+        .map(_.map((x, y) => Point(x, y)))
+      fill <- Gen.boolean
+      color <- Color.gen
+      marker <- Gen.choose(Marker.Circle(10, color, fill))
+    yield ScatterPlot.Trace(points, marker)
+
 case class State[F[_]](
     uri: Option[Uri] = None,
     canvas: Option[fs2.dom.HtmlCanvasElement[F]] = None,
-    scatterTraces: Option[List[ScatterPlot.Trace]] = None
+    scatterTraces: Option[List[ScatterPlot.Trace]] = None,
+    genS: Gen.S = Gen.init
 )
 
 sealed trait Action[F[_]]
@@ -66,28 +77,17 @@ class App[F[_]: Dom](implicit val F: Async[F])
     extends ff4s.App[F, State[F], Action[F]] {
 
   override val store = for {
-
     dispatcher <- Dispatcher.sequential[F]
-
-    nextDouble = F.delay(scala.util.Random.nextDouble())
-    nextPoint = (nextDouble, nextDouble).mapN((x, y) => ff4s.canvas.Point(x, y))
-    nextTrace = nextPoint
-      .replicateA(20)
-      .map(points =>
-        ff4s.canvas.ScatterPlot
-          .Trace(points, Marker.Circle(10, Color.Aquamarine, false))
-      )
 
     store <- ff4s.Store[F, State[F], Action[F]](State())(store =>
       _ match {
         case Action.Noop() => _ -> None
         case Action.RandomizeData() =>
-          _ -> nextTrace
-            .replicateA(3)
-            .flatMap(traces =>
-              store.dispatch(Action.SetScatterPlotData(traces))
-            )
-            .some
+          state =>
+            val (nextState, traces) =
+              scatter.genTrace.replicateA(3).run(state.genS)
+            state.copy(genS = nextState) ->
+              store.dispatch(Action.SetScatterPlotData(traces)).some
         case Action.SetScatterPlotData(traces) =>
           _.copy(scatterTraces = traces.some) -> none
         case Action.SetCanvas(canvas) => _.copy(canvas = canvas.some) -> none
@@ -137,8 +137,8 @@ class App[F[_]: Dom](implicit val F: Async[F])
           widthAttr := 800,
           heightAttr := 500,
           cls := "border rounded border-gray-500",
-          idAttr := "canvas",
-          key := "my-canvas",
+          idAttr := "scatter-plot",
+          key := "scatter-plot",
           insertHook := (el =>
             Action.SetCanvas(el.asInstanceOf[fs2.dom.HtmlCanvasElement[F]])
           )

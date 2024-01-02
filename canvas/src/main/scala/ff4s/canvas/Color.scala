@@ -16,6 +16,8 @@
 
 package ff4s.canvas
 
+import cats.syntax.all.*
+
 enum Color:
   // format: #DEB887
   case Hex(hex: String)
@@ -96,6 +98,13 @@ enum Color:
   override def toString: String = toHex.hex
 
 object Color:
+
+  val gen: Gen[Color] =
+    (
+      Gen.between(0, 256),
+      Gen.between(0, 256),
+      Gen.between(0, 256),
+    ).mapN((r, g, b) => Rgb(r, g, b))
 
   def lerp(c1: Color, c2: Color, t: Double): Color =
     if t <= 0 then c1
