@@ -21,7 +21,7 @@ ThisBuild / developers := List(
 ThisBuild / githubWorkflowPublishTargetBranches := Seq.empty
 ThisBuild / tlFatalWarnings := false
 
-val site: TaskKey[Unit] = taskKey[Unit]("Generate static site")
+val site: TaskKey[File] = taskKey[File]("Generate static site")
 
 lazy val scalajsDomVersion = "2.8.0"
 lazy val circeVersion = "0.14.6"

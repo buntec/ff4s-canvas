@@ -40,13 +40,18 @@ object scatter:
 
   val genTrace: Gen[ScatterPlot.Trace] =
     for
-      nPoints <- Gen.between(5, 50)
+      nPoints <- Gen.between(5, 25)
       points <- (Gen.between(0.0, 1.0), Gen.between(0.0, 1.0)).tupled
         .replicateA(nPoints)
         .map(_.map((x, y) => Point(x, y)))
       fill <- Gen.boolean
       color <- Color.gen
-      marker <- Gen.choose(Marker.Circle(10, color, fill))
+      marker <- Gen.choose(
+        Marker.Circle(10, color, fill),
+        Marker.Triangle(10, color, fill),
+        Marker.Square(10, color, fill),
+        Marker.Cross(10, color)
+      )
     yield ScatterPlot.Trace(points, marker)
 
 case class State[F[_]](

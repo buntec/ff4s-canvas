@@ -16,8 +16,17 @@
 
 package ff4s.canvas
 
+import cats.Show
+
 enum FillRule:
   case Nonzero, EvenOdd
+
+object FillRule:
+
+  given Show[FillRule] = Show.show(_ match
+    case Nonzero => "nonzero"
+    case EvenOdd => "evenodd"
+  )
 
 enum TextAlign:
   case Start, End, Left, Right, Center

@@ -59,7 +59,7 @@ object Shape:
           yield ()
 
         case Cross(sideLength, stroke) =>
-          val h = math.sqrt(2) * sideLength / 2
+          val h = sideLength / 2
           for
             _ <- save
             _ <- beginPath
@@ -99,7 +99,6 @@ object Shape:
             _ <- lineTo(x1, y1)
             _ <- stroke.foldMapM(color => strokeStyle(color) *> dsl.stroke)
             _ <- fill.foldMapM(color => fillStyle(color) *> dsl.fill)
-            _ <- dsl.fill
             _ <- restore
           yield ()
 

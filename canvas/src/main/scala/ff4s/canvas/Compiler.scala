@@ -143,7 +143,10 @@ private[canvas] object Compiler:
           case LineTo(x, y) => ctx.lineTo(x, y)
 
           case IsPointInPath(x, y, fillRule) =>
-            ctx.isPointInPath(x, y)
+            val domFillRule = fillRule match
+              case FillRule.Nonzero => dom.CanvasFillRule.nonzero
+              case FillRule.EvenOdd => dom.CanvasFillRule.evenodd
+            ctx.isPointInPath(x, y, domFillRule)
 
           case SetLineWidth(width) => {
             ctx.lineWidth = width
