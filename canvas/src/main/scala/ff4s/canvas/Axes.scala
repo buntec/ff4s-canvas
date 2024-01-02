@@ -44,14 +44,12 @@ object Axes:
           a.yScale.inverse(0.0),
           a.nYTicks
         )
-        .filter(_ >= 0)
       val xTicks = Ticks
         .ticks(
           a.xScale.inverse(a.xTickSize),
           a.xScale.inverse(a.width),
           a.nXTicks
         )
-        .filter(_ >= 0)
       for
         _ <- save
         _ <- translate(at.x, at.y)

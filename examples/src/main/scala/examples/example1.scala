@@ -40,8 +40,8 @@ object scatter:
 
   val genTrace: Gen[ScatterPlot.Trace] =
     for
-      nPoints <- Gen.between(5, 25)
-      points <- (Gen.between(0.0, 1.0), Gen.between(0.0, 1.0)).tupled
+      nPoints <- Gen.between(5, 50)
+      points <- (Gen.normal, Gen.normal).tupled
         .replicateA(nPoints)
         .map(_.map((x, y) => Point(x, y)))
       fill <- Gen.boolean
