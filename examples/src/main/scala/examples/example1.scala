@@ -33,7 +33,7 @@ object scatter:
     nXTicks = 10,
     nYTicks = 10,
     tickFont =
-      Font(FontSize.Px(12), FontFamily.SystemUI).withWeight(FontWeight.Thin),
+      Font(FontSize.Px(14), FontFamily.SystemUI).withWeight(FontWeight.Thin),
     gridColor = Color.Gray,
     textColor = Color.White,
     axisColor = Color.Silver

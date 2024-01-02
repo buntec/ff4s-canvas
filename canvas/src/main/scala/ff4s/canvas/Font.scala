@@ -45,10 +45,12 @@ object Font:
       f.style.map(_.show),
       f.variant.map(_.show),
       f.weight.map(_.show),
-      f.size.show,
+      f.size.show.some,
       f.lineHeight.map(_.show),
-      f.family.show
-    ).mkString(" ")
+      f.family.show.some
+    ).collect:
+      case Some(a) => a
+    .mkString(" ")
   )
 
 enum FontStyle:
