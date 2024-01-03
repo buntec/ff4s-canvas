@@ -26,6 +26,7 @@ object DrawA:
   case class Save() extends DrawA[Unit]
   case class Restore() extends DrawA[Unit]
   case class BeginPath() extends DrawA[Unit]
+  case class ClosePath() extends DrawA[Unit]
   case class Clip() extends DrawA[Unit]
   case class Fill() extends DrawA[Unit]
   case class SetFillStyle(color: Color) extends DrawA[Unit]
@@ -46,10 +47,23 @@ object DrawA:
   case class Rect(x: Double, y: Double, width: Double, height: Double)
       extends DrawA[Unit]
 
+  case class FillRect(x: Double, y: Double, width: Double, height: Double)
+      extends DrawA[Unit]
+
   case class MoveTo(x: Double, y: Double) extends DrawA[Unit]
+
   case class LineTo(x: Double, y: Double) extends DrawA[Unit]
+
   case class IsPointInPath(x: Double, y: Double, fillRule: FillRule)
       extends DrawA[Boolean]
+
+  case class IsPointInPath2[A](
+      path: Path[A],
+      x: Double,
+      y: Double,
+      fillRule: FillRule
+  ) extends DrawA[Boolean]
+
   case class SetLineWidth(width: Double) extends DrawA[Unit]
   case class SetFont(font: Font) extends DrawA[Unit]
   case class SetTextAlign(align: TextAlign) extends DrawA[Unit]
@@ -70,9 +84,14 @@ object DrawA:
   case class GetWidth() extends DrawA[Int]
   case class GetHeight() extends DrawA[Int]
 
+  // simple KV store
+  case class KVPut[T](key: String, value: T) extends DrawA[Unit]
+  case class KVGet[T](key: String) extends DrawA[Option[T]]
+  case class KVDelete(key: String) extends DrawA[Unit]
+
 type Draw[A] = Free[DrawA, A]
 
-object dsl:
+object Draw:
   import DrawA.*
 
   def pure[A](a: A): Draw[A] = Monad[Draw].pure(a)
@@ -84,6 +103,8 @@ object dsl:
   val restore: Draw[Unit] = liftF[DrawA, Unit](Restore())
 
   val beginPath: Draw[Unit] = liftF[DrawA, Unit](BeginPath())
+
+  val closePath: Draw[Unit] = liftF[DrawA, Unit](ClosePath())
 
   val clip: Draw[Unit] = liftF[DrawA, Unit](Clip())
 
@@ -113,6 +134,14 @@ object dsl:
   ): Draw[Boolean] =
     liftF[DrawA, Boolean](IsPointInPath(x, y, fillRule))
 
+  def isPointInPath[A](
+      path: Path[A],
+      x: Double,
+      y: Double,
+      fillRule: FillRule
+  ): Draw[Boolean] =
+    liftF[DrawA, Boolean](IsPointInPath2(path, x, y, fillRule))
+
   def arc(
       x: Double,
       y: Double,
@@ -127,6 +156,14 @@ object dsl:
 
   def rect(x: Double, y: Double, width: Double, height: Double): Draw[Unit] =
     liftF[DrawA, Unit](Rect(x, y, width, height))
+
+  def fillRect(
+      x: Double,
+      y: Double,
+      width: Double,
+      height: Double
+  ): Draw[Unit] =
+    liftF[DrawA, Unit](FillRect(x, y, width, height))
 
   def lineWidth(width: Double): Draw[Unit] =
     liftF[DrawA, Unit](SetLineWidth(width))
@@ -154,6 +191,8 @@ object dsl:
   def scale(x: Double, y: Double): Draw[Unit] =
     liftF[DrawA, Unit](Scale(x, y))
 
+  // custom
+
   val mousePos: Draw[Point] = liftF[DrawA, Point](GetMousePos())
 
   val transform: Draw[Transform] = liftF[DrawA, Transform](GetTransform())
@@ -166,3 +205,14 @@ object dsl:
 
   val height: Draw[Int] =
     liftF[DrawA, Int](GetHeight())
+
+  // kv
+
+  def kvPut[T](key: String, value: T): Draw[Unit] =
+    liftF[DrawA, Unit](KVPut[T](key, value))
+
+  def kvGet[T](key: String): Draw[Option[T]] =
+    liftF[DrawA, Option[T]](KVGet[T](key))
+
+  def kvDelete(key: String): Draw[Unit] =
+    liftF[DrawA, Unit](KVDelete(key))

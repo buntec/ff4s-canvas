@@ -33,6 +33,8 @@ private[canvas] object Compiler:
     canvas.width = initialWidth
     canvas.height = initialHeight
 
+    val kvs = collection.mutable.Map.empty[String, Any]
+
     val ctx: dom.CanvasRenderingContext2D =
       canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
 
@@ -116,12 +118,22 @@ private[canvas] object Compiler:
           case GetMousePos()        => mousePos
           case GetMarginTransform() => marginTransform
 
+          // kv
+          case KVPut(key, value) =>
+            kvs(key) = value
+          case KVGet(key) =>
+            kvs.get(key).asInstanceOf[A]
+          case KVDelete(key) =>
+            kvs.remove(key)
+            ()
+
           // canvas ctx
           case Save() => ctx.save()
 
           case Restore() => ctx.restore()
 
           case BeginPath() => ctx.beginPath()
+          case ClosePath() => ctx.closePath()
 
           case Clip() => ctx.clip()
           case Fill() => ctx.fill()
@@ -133,6 +145,8 @@ private[canvas] object Compiler:
             ctx.strokeStyle = color.toString
           }
           case ClearRect(x, y, w, h) => ctx.clearRect(x, y, w, h)
+
+          case FillRect(x, y, w, h) => ctx.fillRect(x, y, w, h)
 
           case Arc(x, y, radius, startAngle, endAngle, counterclockwise) =>
             ctx.arc(x, y, radius, startAngle, endAngle, counterclockwise)
@@ -147,6 +161,13 @@ private[canvas] object Compiler:
               case FillRule.Nonzero => dom.CanvasFillRule.nonzero
               case FillRule.EvenOdd => dom.CanvasFillRule.evenodd
             ctx.isPointInPath(x, y, domFillRule)
+
+          case IsPointInPath2(path, x, y, fillRule) =>
+            val domFillRule = fillRule match
+              case FillRule.Nonzero => dom.CanvasFillRule.nonzero
+              case FillRule.EvenOdd => dom.CanvasFillRule.evenodd
+            val p2d = Path.toPath2D(path)
+            ctx.isPointInPath(p2d, x, y, domFillRule)
 
           case SetLineWidth(width) => {
             ctx.lineWidth = width

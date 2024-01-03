@@ -25,6 +25,7 @@ import ff4s.canvas.syntax.*
 import fs2.concurrent.Signal
 import fs2.dom.Dom
 import fs2.dom.HtmlCanvasElement
+import cats.Monad
 
 object ScatterPlot:
 
@@ -58,8 +59,29 @@ object ScatterPlot:
       dispatcher: Dispatcher[F]
   )(using F: Async[F]): Resource[F, Unit] =
 
+    def tooltip(hover: Point): Draw[Unit] =
+      import Draw.*
+      for
+        _ <- save
+        w <- width
+        h <- height
+        mp0 <- mousePos
+        mt <- marginTransform
+        mp = mt.invert(mp0)
+        // _ <- fillStyle(Color.Black)
+        // _ <- fillRect(mp.x + 0.02 * w, mp.y - 0.05 * h, 0.05 * w, 0.05 * h)
+        _ <- fillStyle(config.textColor)
+        _ <- font(config.tickFont)
+        _ <- fillText(
+          f"x=${hover.x}%.2f, y=${hover.y}%.2f",
+          mp.x + 0.02 * w,
+          mp.y - 0.02 * h
+        )
+        _ <- restore
+      yield ()
+
     val drawFrame = (t: DOMHighResTimeStamp, traces: List[Trace]) => {
-      import dsl.*
+      import Draw.*
       val nPoints = traces.map(_.points.length).sum
       if nPoints > 0 then
         val xMin = traces.flatMap(_.points.map(_.x)).min
@@ -107,15 +129,30 @@ object ScatterPlot:
           _ <- rect(yTickSize, 0, w - yTickSize, h - xTickSize)
           _ <- clip
 
+          mp <- mousePos
+          _ <- kvDelete("hover") // reset hover info
           _ <- traces.traverse_ { trace =>
             trace.points.traverse_ { point =>
-              val point0 = Point(xScale(point.x), yScale(point.y))
-              trace.marker.draw(point0)
+              val at = Point(xScale(point.x), yScale(point.y))
+              val boundingPath = trace.marker.boundingPath(at)
+              isPointInPath(
+                boundingPath,
+                mp.x,
+                mp.y,
+                FillRule.Nonzero
+              ).flatMap: isHover =>
+                Monad[Draw].whenA(isHover)(
+                  kvPut("hover", point)
+                ) *> trace.marker.draw(at)
+
             }
           }
           _ <- restore
+
+          _ <- kvGet[Point]("hover").flatMap(_.foldMapM(tooltip))
+
         } yield ()
-      else dsl.noop
+      else Draw.noop
     }
 
     ff4s.canvas.render.loop(

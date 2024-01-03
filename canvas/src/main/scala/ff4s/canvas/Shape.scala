@@ -46,15 +46,15 @@ object Shape:
 
   given Drawable[Shape] = new Drawable[Shape]:
     def draw(shape: Shape, at: Point): Draw[Unit] =
-      import dsl.*
+      import Draw.*
       shape match
         case Circle(radius, stroke, fill) =>
           for
             _ <- save
             _ <- beginPath
             _ <- arc(at.x, at.y, radius, 0, 2 * math.Pi, false)
-            _ <- stroke.foldMapM(color => strokeStyle(color) *> dsl.stroke)
-            _ <- fill.foldMapM(color => fillStyle(color) *> dsl.fill)
+            _ <- stroke.foldMapM(color => strokeStyle(color) *> Draw.stroke)
+            _ <- fill.foldMapM(color => fillStyle(color) *> Draw.fill)
             _ <- restore
           yield ()
 
@@ -67,7 +67,7 @@ object Shape:
             _ <- lineTo(at.x + h, at.y + h)
             _ <- moveTo(at.x + h, at.y - h)
             _ <- lineTo(at.x - h, at.y + h)
-            _ <- stroke.foldMapM(color => strokeStyle(color) *> dsl.stroke)
+            _ <- stroke.foldMapM(color => strokeStyle(color) *> Draw.stroke)
             _ <- restore
           yield ()
 
@@ -96,9 +96,9 @@ object Shape:
             _ <- moveTo(x1, y1)
             _ <- lineTo(x2, y2)
             _ <- lineTo(x3, y3)
-            _ <- lineTo(x1, y1)
-            _ <- stroke.foldMapM(color => strokeStyle(color) *> dsl.stroke)
-            _ <- fill.foldMapM(color => fillStyle(color) *> dsl.fill)
+            _ <- closePath
+            _ <- stroke.foldMapM(color => strokeStyle(color) *> Draw.stroke)
+            _ <- fill.foldMapM(color => fillStyle(color) *> Draw.fill)
             _ <- restore
           yield ()
 
@@ -109,7 +109,51 @@ object Shape:
             _ <- save
             _ <- beginPath
             _ <- rect(x, y, width, height)
-            _ <- stroke.foldMapM(color => strokeStyle(color) *> dsl.stroke)
-            _ <- fill.foldMapM(color => fillStyle(color) *> dsl.fill)
+            _ <- stroke.foldMapM(color => strokeStyle(color) *> Draw.stroke)
+            _ <- fill.foldMapM(color => fillStyle(color) *> Draw.fill)
             _ <- restore
           yield ()
+
+  given Boundary[Shape] = new Boundary[Shape]:
+    def path(shape: Shape, at: Point): Path[Unit] = {
+      import Path.*
+      shape match
+        case Circle(radius, stroke, fill) =>
+          arc(at.x, at.y, radius, 0, 2 * math.Pi)
+
+        case EquilateralTriangle(
+              sideLength,
+              centered,
+              direction,
+              stroke,
+              fill
+            ) =>
+          val l = sideLength
+          val h = l * SQRT_3 / 2
+          val sign = direction match
+            case Direction.Up   => 1
+            case Direction.Down => -1
+
+          val x1 = at.x
+          val y1 = if centered then at.y - h / 2 else at.y
+          val x2 = x1 - l / 2
+          val y2 = y1 + sign * h
+          val x3 = x1 + l / 2
+          val y3 = y1 + sign * h
+          for
+            _ <- moveTo(x1, y1)
+            _ <- lineTo(x2, y2)
+            _ <- lineTo(x3, y3)
+            _ <- closePath
+          yield ()
+
+        case Rectangle(width, height, centered, stroke, fill) =>
+          val x = if centered then at.x - width / 2 else at.x
+          val y = if centered then at.y - height / 2 else at.y
+          rect(x, y, width, height)
+
+        case Cross(sideLength, stroke) =>
+          val h = sideLength / 2
+          rect(at.x - h, at.y - h, sideLength, sideLength)
+
+    }

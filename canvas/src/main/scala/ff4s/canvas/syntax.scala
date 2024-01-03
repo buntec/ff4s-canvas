@@ -16,4 +16,4 @@
 
 package ff4s.canvas
 
-object syntax extends DrawableSyntax with TransitionSyntax
+object syntax extends DrawableSyntax with BoundarySyntax with TransitionSyntax

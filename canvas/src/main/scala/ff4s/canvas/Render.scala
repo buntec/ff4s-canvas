@@ -88,12 +88,12 @@ def loop[F[_]: Dom, D: Eq: Transition](
 
           def draw(t: Double): Unit =
             val setup = (
-              dsl.save,
-              dsl.clearRect(0, 0, width, height),
-              dsl.marginTransform.flatMap(_.applyToCtx)
+              Draw.save,
+              Draw.clearRect(0, 0, width, height),
+              Draw.marginTransform.flatMap(_.applyToCtx)
             ).tupled
 
-            val cleanup = dsl.restore
+            val cleanup = Draw.restore
 
             dispatcher.unsafeRunAndForget(
               (F.realTime, currentAndPrevData.get).flatMapN {

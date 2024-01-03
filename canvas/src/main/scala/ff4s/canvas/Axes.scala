@@ -36,7 +36,7 @@ final case class Axes(
 object Axes:
 
   given Drawable[Axes] = new Drawable[Axes]:
-    import dsl.*
+    import Draw.*
     def draw(a: Axes, at: Point): Draw[Unit] =
       val yTicks = Ticks
         .ticks(

@@ -62,6 +62,7 @@ object Marker:
             ),
             at
           )
+
         case Triangle(size, color, fill) =>
           Drawable[Shape].draw(
             Shape.EquilateralTriangle(
@@ -73,6 +74,7 @@ object Marker:
             ),
             at
           )
+
         case Square(size, color, fill) =>
           Drawable[Shape].draw(
             Shape.Rectangle(
@@ -93,6 +95,46 @@ object Marker:
             ),
             at
           )
+
+  given Boundary[Marker] = new Boundary[Marker]:
+    def path(a: Marker, at: Point): Path[Unit] =
+      a match
+        case Circle(size, color, fill) =>
+          Boundary[Shape].path(
+            Shape.Circle(
+              size / 2,
+              None,
+              None
+            ),
+            at
+          )
+
+        case Triangle(size, color, fill) =>
+          Boundary[Shape].path(
+            Shape.EquilateralTriangle(
+              size,
+              true,
+              Direction.Up,
+              None,
+              None
+            ),
+            at
+          )
+
+        case Square(size, color, fill) =>
+          Boundary[Shape].path(
+            Shape.Rectangle(
+              size,
+              size,
+              true,
+              None,
+              None
+            ),
+            at
+          )
+
+        case Cross(size, color) =>
+          Boundary[Shape].path(Shape.Cross(size, None), at)
 
   given Transition[Marker] = new Transition[Marker]:
     def apply(a1: Marker, a2: Marker, t: Double): Marker =

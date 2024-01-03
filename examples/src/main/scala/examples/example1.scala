@@ -46,11 +46,12 @@ object scatter:
         .map(_.map((x, y) => Point(x, y)))
       fill <- Gen.boolean
       color <- Color.gen
+      markerSize = 12
       marker <- Gen.choose(
-        Marker.Circle(10, color, fill),
-        Marker.Triangle(10, color, fill),
-        Marker.Square(10, color, fill),
-        Marker.Cross(10, color)
+        Marker.Circle(markerSize, color, fill),
+        Marker.Triangle(markerSize, color, fill),
+        Marker.Square(markerSize, color, fill),
+        Marker.Cross(markerSize, color)
       )
     yield ScatterPlot.Trace(points, marker)
 

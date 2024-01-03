@@ -34,7 +34,7 @@ case class Transform(x: Double, y: Double, k: Double):
 
   def andThen(t: Transform): Transform = t.after(this)
 
-  def applyToCtx: Draw[Unit] = dsl.translate(x, y) *> dsl.scale(k, k)
+  def applyToCtx: Draw[Unit] = Draw.translate(x, y) *> Draw.scale(k, k)
 
   private[canvas] def applyToCtx(ctx: CanvasRenderingContext2D): Unit =
     ctx.translate(x, y)
