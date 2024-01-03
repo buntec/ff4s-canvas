@@ -16,11 +16,11 @@
 
 package ff4s.canvas
 
+import cats.Id
 import cats.free.Free
 import cats.free.Free.*
-import org.scalajs.dom.Path2D
-import cats.Id
 import cats.~>
+import org.scalajs.dom.Path2D
 
 sealed trait PathA[A]
 
