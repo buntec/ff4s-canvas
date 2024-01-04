@@ -25,6 +25,7 @@ import ff4s.canvas.syntax.*
 import fs2.concurrent.Signal
 import fs2.dom.Dom
 import fs2.dom.HtmlCanvasElement
+import cats.Monad
 
 object ScatterPlot:
 
@@ -79,15 +80,15 @@ object ScatterPlot:
         _ <- restore
       yield ()
 
-    val drawFrame = (t: DOMHighResTimeStamp, traces: List[Trace]) => {
+    val drawFrame = (t: DOMHighResTimeStamp, traces: List[Trace]) =>
       import Draw.*
       val nPoints = traces.map(_.points.length).sum
-      if nPoints > 0 then
+      Monad[Draw].whenA(nPoints > 0):
         val xMin = traces.flatMap(_.points.map(_.x)).min
         val xMax = traces.flatMap(_.points.map(_.x)).max
         val yMin = traces.flatMap(_.points.map(_.y)).min
         val yMax = traces.flatMap(_.points.map(_.y)).max
-        for {
+        for
           _ <- save
           w <- width
           h <- height
@@ -143,18 +144,21 @@ object ScatterPlot:
                 if isHover then
                   val c0 = trace.marker.toColor
                   val marker = trace.marker.withColor(c0.lighten(20))
-                  kvPut("hover", point) *> marker.draw(at)
+                  for
+                    _ <- kvPut("hover", point)
+                    _ <- save
+                    _ <- setShadowColor(c0)
+                    _ <- setShadowBlur(trace.marker.toSize / 2)
+                    _ <- marker.draw(at)
+                    _ <- restore
+                  yield ()
                 else trace.marker.draw(at)
 
             }
           }
           _ <- restore
-
           _ <- kvGet[Point]("hover").flatMap(_.foldMapM(tooltip))
-
-        } yield ()
-      else Draw.noop
-    }
+        yield ()
 
     ff4s.canvas.render.loop(
       elm,

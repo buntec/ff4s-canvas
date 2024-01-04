@@ -17,6 +17,7 @@
 package ff4s.canvas
 
 import cats.syntax.all.*
+import cats.Show
 
 enum Color:
   // format: #DEB887
@@ -106,6 +107,8 @@ enum Color:
   override def toString: String = toHex.hex
 
 object Color:
+
+  given Show[Color] = Show.fromToString
 
   val gen: Gen[Color] =
     (

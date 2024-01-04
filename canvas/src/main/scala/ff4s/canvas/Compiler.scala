@@ -142,6 +142,18 @@ private[canvas] object Compiler:
             val p2d = Path.toPath2D(path)
             ctx.fill(p2d)
 
+          case SetShadowBlur(blue) =>
+            ctx.shadowBlur = blue
+
+          case SetShadowColor(color) =>
+            ctx.shadowColor = color.toString
+
+          case SetShadowOffsetX(offset) =>
+            ctx.shadowOffsetX = offset
+
+          case SetShadowOffsetY(offset) =>
+            ctx.shadowOffsetY = offset
+
           case SetFillStyle(color) => {
             ctx.fillStyle = color.toString
           }

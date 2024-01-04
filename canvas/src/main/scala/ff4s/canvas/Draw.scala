@@ -17,12 +17,25 @@
 package ff4s.canvas
 
 import cats.Monad
+import cats.syntax.all.*
 import cats.free.Free
 import cats.free.Free.*
 
 sealed trait DrawA[A]
 
 object DrawA:
+
+  case class SetShadowColor(color: Color) extends DrawA[Unit]
+  case class SetShadowBlur(blue: Double) extends DrawA[Unit]
+  case class SetShadowOffsetX(offset: Double) extends DrawA[Unit]
+  case class SetShadowOffsetY(offset: Double) extends DrawA[Unit]
+
+  case class SetStrokeStyle(color: Color) extends DrawA[Unit]
+  case class SetLineWidth(width: Double) extends DrawA[Unit]
+  case class SetFont(font: Font) extends DrawA[Unit]
+  case class SetTextAlign(align: TextAlign) extends DrawA[Unit]
+  case class SetTextBaseline(baseline: TextBaseline) extends DrawA[Unit]
+
   case class Save() extends DrawA[Unit]
   case class Restore() extends DrawA[Unit]
   case class BeginPath() extends DrawA[Unit]
@@ -32,7 +45,6 @@ object DrawA:
   case class Fill2[A](path: Path[A]) extends DrawA[Unit]
   case class SetFillStyle(color: Color) extends DrawA[Unit]
   case class Stroke() extends DrawA[Unit]
-  case class SetStrokeStyle(color: Color) extends DrawA[Unit]
   case class ClearRect(x: Double, y: Double, w: Double, h: Double)
       extends DrawA[Unit]
 
@@ -65,10 +77,6 @@ object DrawA:
       fillRule: FillRule
   ) extends DrawA[Boolean]
 
-  case class SetLineWidth(width: Double) extends DrawA[Unit]
-  case class SetFont(font: Font) extends DrawA[Unit]
-  case class SetTextAlign(align: TextAlign) extends DrawA[Unit]
-  case class SetTextBaseline(baseline: TextBaseline) extends DrawA[Unit]
   case class FillText(
       text: String,
       x: Double,
@@ -111,9 +119,24 @@ object Draw:
 
   val fill: Draw[Unit] = liftF[DrawA, Unit](Fill())
 
+  val stroke: Draw[Unit] = liftF[DrawA, Unit](Stroke())
+
   def fill[A](path: Path[A]): Draw[Unit] = liftF[DrawA, Unit](Fill2(path))
 
-  val stroke: Draw[Unit] = liftF[DrawA, Unit](Stroke())
+  def withSaveAndRestore[A](da: Draw[A]): Draw[A] =
+    save *> da <* restore
+
+  def setShadowBlur(blur: Double): Draw[Unit] =
+    liftF[DrawA, Unit](SetShadowBlur(blur))
+
+  def setShadowColor(color: Color): Draw[Unit] =
+    liftF[DrawA, Unit](SetShadowColor(color))
+
+  def setShadowOffsetX(offset: Double): Draw[Unit] =
+    liftF[DrawA, Unit](SetShadowOffsetX(offset))
+
+  def setShadowOffsetY(offset: Double): Draw[Unit] =
+    liftF[DrawA, Unit](SetShadowOffsetY(offset))
 
   def fillStyle(color: Color): Draw[Unit] =
     liftF[DrawA, Unit](SetFillStyle(color))
