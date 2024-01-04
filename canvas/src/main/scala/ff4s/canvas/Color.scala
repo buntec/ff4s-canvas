@@ -95,6 +95,14 @@ enum Color:
     case hsl @ Hsl(_, _, _) => hsl
     case other              => other.toRgb.toHsl
 
+  def lighten(amount: Double): Color =
+    val hsl = toHsl
+    hsl.copy(l = math.max(0, math.min(hsl.l + amount, 100)))
+
+  def darken(amount: Double): Color =
+    val hsl = toHsl
+    hsl.copy(l = math.max(0, math.min(hsl.l - amount, 100)))
+
   override def toString: String = toHex.hex
 
 object Color:

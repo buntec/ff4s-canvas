@@ -29,6 +29,7 @@ object DrawA:
   case class ClosePath() extends DrawA[Unit]
   case class Clip() extends DrawA[Unit]
   case class Fill() extends DrawA[Unit]
+  case class Fill2[A](path: Path[A]) extends DrawA[Unit]
   case class SetFillStyle(color: Color) extends DrawA[Unit]
   case class Stroke() extends DrawA[Unit]
   case class SetStrokeStyle(color: Color) extends DrawA[Unit]
@@ -109,6 +110,8 @@ object Draw:
   val clip: Draw[Unit] = liftF[DrawA, Unit](Clip())
 
   val fill: Draw[Unit] = liftF[DrawA, Unit](Fill())
+
+  def fill[A](path: Path[A]): Draw[Unit] = liftF[DrawA, Unit](Fill2(path))
 
   val stroke: Draw[Unit] = liftF[DrawA, Unit](Stroke())
 

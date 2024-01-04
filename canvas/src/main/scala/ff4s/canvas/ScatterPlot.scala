@@ -16,7 +16,6 @@
 
 package ff4s.canvas
 
-import cats.Monad
 import cats.effect.kernel.Async
 import cats.effect.kernel.Resource
 import cats.effect.std.Dispatcher
@@ -141,9 +140,11 @@ object ScatterPlot:
                 mp.y,
                 FillRule.Nonzero
               ).flatMap: isHover =>
-                Monad[Draw].whenA(isHover)(
-                  kvPut("hover", point)
-                ) *> trace.marker.draw(at)
+                if isHover then
+                  val c0 = trace.marker.toColor
+                  val marker = trace.marker.withColor(c0.lighten(20))
+                  kvPut("hover", point) *> marker.draw(at)
+                else trace.marker.draw(at)
 
             }
           }

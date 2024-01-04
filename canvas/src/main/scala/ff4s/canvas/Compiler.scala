@@ -137,6 +137,11 @@ private[canvas] object Compiler:
 
           case Clip() => ctx.clip()
           case Fill() => ctx.fill()
+
+          case Fill2(path) =>
+            val p2d = Path.toPath2D(path)
+            ctx.fill(p2d)
+
           case SetFillStyle(color) => {
             ctx.fillStyle = color.toString
           }
