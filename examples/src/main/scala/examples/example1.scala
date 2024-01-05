@@ -35,11 +35,13 @@ object scatter:
       Font(FontSize.Px(14), FontFamily.SystemUI).withWeight(FontWeight.Thin),
     gridColor = Color.Gray,
     textColor = Color.White,
-    axisColor = Color.Silver
+    axisColor = Color.Silver,
+    legend = true
   )
 
   val genTrace: Gen[ScatterPlot.Trace] =
     for
+      label <- Gen.alphaNumericString(10)
       nPoints <- Gen.between(5, 50)
       points <- (Gen.normal, Gen.normal).tupled
         .replicateA(nPoints)
@@ -53,7 +55,7 @@ object scatter:
         Marker.Square(markerSize, color, fill),
         Marker.Cross(markerSize, color)
       )
-    yield ScatterPlot.Trace(points, marker)
+    yield ScatterPlot.Trace(points, marker, label.some)
 
 case class State[F[_]](
     uri: Option[Uri] = None,
@@ -91,7 +93,10 @@ class App[F[_]: Dom](implicit val F: Async[F])
         case Action.RandomizeData() =>
           state =>
             val (nextState, traces) =
-              scatter.genTrace.replicateA(3).run(state.genS)
+              Gen
+                .between(1, 4)
+                .flatMap(n => scatter.genTrace.replicateA(n))
+                .run(state.genS)
             state.copy(genS = nextState) ->
               store.dispatch(Action.SetScatterPlotData(traces)).some
         case Action.SetScatterPlotData(traces) =>

@@ -54,8 +54,8 @@ object Axes:
         _ <- save
         _ <- translate(at.x, at.y)
         _ <- beginPath
-        _ <- lineWidth(1.0)
-        _ <- strokeStyle(a.axisColor)
+        _ <- setLineWidth(1.0)
+        _ <- setStrokeStyle(a.axisColor)
         _ <- moveTo(a.yTickSize, 0)
         _ <- lineTo(a.yTickSize, a.height)
         _ <- moveTo(0, a.height - a.xTickSize)
@@ -63,27 +63,27 @@ object Axes:
         _ <- stroke
         _ <- beginPath
 
-        _ <- fillStyle(a.textColor)
-        _ <- font(a.tickFont)
+        _ <- setFillStyle(a.textColor)
+        _ <- setFont(a.tickFont)
 
         // draw y-ticks
-        _ <- textAlign(TextAlign.Right)
+        _ <- setTextAlign(TextAlign.Right)
         _ <- yTicks.traverse_ { tick =>
           for
             _ <- moveTo(0, a.yScale(tick))
             _ <- lineTo(a.yTickSize, a.yScale(tick))
-            _ <- textBaseline(TextBaseline.Middle)
+            _ <- setTextBaseline(TextBaseline.Middle)
             _ <- fillText(tick.toString, -a.yTickSize, a.yScale(tick))
           yield ()
         }
 
         // draw x-ticks
-        _ <- textAlign(TextAlign.Center)
+        _ <- setTextAlign(TextAlign.Center)
         _ <- xTicks.traverse_ { tick =>
           for
             _ <- moveTo(a.xScale(tick), a.height - a.xTickSize)
             _ <- lineTo(a.xScale(tick), a.height)
-            _ <- textBaseline(TextBaseline.Top)
+            _ <- setTextBaseline(TextBaseline.Top)
             _ <- fillText(tick.toString, a.xScale(tick), a.height + a.xTickSize)
           yield ()
         }
@@ -91,8 +91,8 @@ object Axes:
         _ <- stroke
 
         _ <- beginPath
-        _ <- strokeStyle(a.gridColor)
-        _ <- fillStyle(a.gridColor)
+        _ <- setStrokeStyle(a.gridColor)
+        _ <- setFillStyle(a.gridColor)
 
         // draw horizontal grid lines
         _ <- yTicks.traverse_ : tick =>

@@ -20,6 +20,7 @@ import cats.Monad
 import cats.syntax.all.*
 import cats.free.Free
 import cats.free.Free.*
+import org.scalajs.dom.TextMetrics
 
 sealed trait DrawA[A]
 
@@ -30,11 +31,15 @@ object DrawA:
   case class SetShadowOffsetX(offset: Double) extends DrawA[Unit]
   case class SetShadowOffsetY(offset: Double) extends DrawA[Unit]
 
+  case class SetGlobalAlpha(alpha: Double) extends DrawA[Unit]
   case class SetStrokeStyle(color: Color) extends DrawA[Unit]
   case class SetLineWidth(width: Double) extends DrawA[Unit]
   case class SetFont(font: Font) extends DrawA[Unit]
   case class SetTextAlign(align: TextAlign) extends DrawA[Unit]
   case class SetTextBaseline(baseline: TextBaseline) extends DrawA[Unit]
+  case class SetDirection(dir: TextDirection) extends DrawA[Unit]
+
+  case class MeasureText(text: String) extends DrawA[TextMetrics]
 
   case class Save() extends DrawA[Unit]
   case class Restore() extends DrawA[Unit]
@@ -59,6 +64,14 @@ object DrawA:
 
   case class Rect(x: Double, y: Double, width: Double, height: Double)
       extends DrawA[Unit]
+
+  case class RoundRect(
+      x: Double,
+      y: Double,
+      width: Double,
+      height: Double,
+      radii: Double
+  ) extends DrawA[Unit]
 
   case class FillRect(x: Double, y: Double, width: Double, height: Double)
       extends DrawA[Unit]
@@ -138,10 +151,13 @@ object Draw:
   def setShadowOffsetY(offset: Double): Draw[Unit] =
     liftF[DrawA, Unit](SetShadowOffsetY(offset))
 
-  def fillStyle(color: Color): Draw[Unit] =
+  def setFillStyle(color: Color): Draw[Unit] =
     liftF[DrawA, Unit](SetFillStyle(color))
 
-  def strokeStyle(color: Color): Draw[Unit] =
+  def setGlobalAlpha(alpha: Double): Draw[Unit] =
+    liftF[DrawA, Unit](SetGlobalAlpha(alpha))
+
+  def setStrokeStyle(color: Color): Draw[Unit] =
     liftF[DrawA, Unit](SetStrokeStyle(color))
 
   def clearRect(x: Double, y: Double, w: Double, h: Double): Draw[Unit] =
@@ -183,6 +199,15 @@ object Draw:
   def rect(x: Double, y: Double, width: Double, height: Double): Draw[Unit] =
     liftF[DrawA, Unit](Rect(x, y, width, height))
 
+  def roundRect(
+      x: Double,
+      y: Double,
+      width: Double,
+      height: Double,
+      radii: Double
+  ): Draw[Unit] =
+    liftF[DrawA, Unit](RoundRect(x, y, width, height, radii))
+
   def fillRect(
       x: Double,
       y: Double,
@@ -191,16 +216,16 @@ object Draw:
   ): Draw[Unit] =
     liftF[DrawA, Unit](FillRect(x, y, width, height))
 
-  def lineWidth(width: Double): Draw[Unit] =
+  def setLineWidth(width: Double): Draw[Unit] =
     liftF[DrawA, Unit](SetLineWidth(width))
 
-  def font(font: Font): Draw[Unit] =
+  def setFont(font: Font): Draw[Unit] =
     liftF[DrawA, Unit](SetFont(font))
 
-  def textAlign(align: TextAlign): Draw[Unit] =
+  def setTextAlign(align: TextAlign): Draw[Unit] =
     liftF[DrawA, Unit](SetTextAlign(align))
 
-  def textBaseline(baseline: TextBaseline): Draw[Unit] =
+  def setTextBaseline(baseline: TextBaseline): Draw[Unit] =
     liftF[DrawA, Unit](SetTextBaseline(baseline))
 
   def fillText(
@@ -216,6 +241,9 @@ object Draw:
 
   def scale(x: Double, y: Double): Draw[Unit] =
     liftF[DrawA, Unit](Scale(x, y))
+
+  def measureText(text: String): Draw[TextMetrics] =
+    liftF[DrawA, TextMetrics](MeasureText(text))
 
   // custom
 

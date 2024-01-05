@@ -34,6 +34,17 @@ enum TextAlign:
 enum TextBaseline:
   case Top, Middle, Bottom, Hanging, Alphabetic, Ideographic
 
+enum TextDirection:
+  case LeftToRight, RightToLeft, Inherit
+
+object TextDirection:
+
+  given Show[TextDirection] = Show.show:
+    _ match
+      case LeftToRight => "ltr"
+      case RightToLeft => "rtl"
+      case Inherit     => "inherit"
+
 enum Direction:
   case Up, Down
 

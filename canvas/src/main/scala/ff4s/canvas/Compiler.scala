@@ -20,6 +20,7 @@ import cats.Id
 import cats.syntax.all.*
 import cats.~>
 import org.scalajs.dom
+import scalajs.js
 
 private[canvas] object Compiler:
 
@@ -130,6 +131,9 @@ private[canvas] object Compiler:
           // canvas ctx
           case Save() => ctx.save()
 
+          case MeasureText(text) =>
+            ctx.measureText(text)
+
           case Restore() => ctx.restore()
 
           case BeginPath() => ctx.beginPath()
@@ -141,6 +145,9 @@ private[canvas] object Compiler:
           case Fill2(path) =>
             val p2d = Path.toPath2D(path)
             ctx.fill(p2d)
+
+          case SetGlobalAlpha(alpha) =>
+            ctx.globalAlpha = alpha
 
           case SetShadowBlur(blue) =>
             ctx.shadowBlur = blue
@@ -169,6 +176,12 @@ private[canvas] object Compiler:
             ctx.arc(x, y, radius, startAngle, endAngle, counterclockwise)
 
           case Rect(x, y, width, height) => ctx.rect(x, y, width, height)
+
+          case RoundRect(x, y, width, height, radii) =>
+            ctx
+              .asInstanceOf[js.Dynamic]
+              .roundRect(x, y, width, height, radii)
+            ()
 
           case MoveTo(x, y) => ctx.moveTo(x, y)
           case LineTo(x, y) => ctx.lineTo(x, y)
@@ -210,6 +223,8 @@ private[canvas] object Compiler:
               case TextBaseline.Ideographic => "ideographic"
               case TextBaseline.Alphabetic  => "alphabetic"
           }
+          case SetDirection(dir) => ??? // missing from org.scalajs.dom ?
+
           case FillText(text, x, y, maxWidth) => {
             ctx.fillText(text, x, y)
           }

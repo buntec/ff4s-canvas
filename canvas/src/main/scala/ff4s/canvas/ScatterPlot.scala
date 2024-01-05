@@ -26,6 +26,7 @@ import fs2.concurrent.Signal
 import fs2.dom.Dom
 import fs2.dom.HtmlCanvasElement
 import cats.Monad
+import scalajs.js
 
 object ScatterPlot:
 
@@ -35,12 +36,14 @@ object ScatterPlot:
       tickFont: Font,
       axisColor: Color,
       textColor: Color,
-      gridColor: Color
+      gridColor: Color,
+      legend: Boolean
   )
 
   final case class Trace(
       points: List[Point],
-      marker: Marker
+      marker: Marker,
+      label: Option[String]
   )
 
   object Trace:
@@ -48,7 +51,8 @@ object ScatterPlot:
     given Transition[Trace] = Transition.transition((tr1, tr2, t) =>
       Trace(
         Transition[List[Point]](tr1.points, tr2.points, t),
-        Transition[Marker](tr1.marker, tr2.marker, t)
+        Transition[Marker](tr1.marker, tr2.marker, t),
+        tr2.label
       )
     )
 
@@ -70,13 +74,62 @@ object ScatterPlot:
         mp = mt.invert(mp0)
         // _ <- fillStyle(Color.Black)
         // _ <- fillRect(mp.x + 0.02 * w, mp.y - 0.05 * h, 0.05 * w, 0.05 * h)
-        _ <- fillStyle(config.textColor)
-        _ <- font(config.tickFont)
+        _ <- setFillStyle(config.textColor)
+        _ <- setFont(config.tickFont)
         _ <- fillText(
           f"x=${hover.x}%.2f, y=${hover.y}%.2f",
           mp.x + 0.02 * w,
           mp.y - 0.02 * h
         )
+        _ <- restore
+      yield ()
+
+    def legend(traces: List[Trace]): Draw[Unit] =
+      import Draw.*
+      for
+        _ <- save
+        w <- width
+        h <- height
+        dy = 0.05 * h
+        dx = 0.04 * w
+        _ <- translate(w - 4 * dx, dy)
+        _ <- setFont(config.tickFont)
+        n = traces.length
+        maxTextWidth <- traces
+          .map(_.label.getOrElse("?"))
+          .traverse(s => measureText(s))
+          .map(_.map(_.width).max)
+
+        _ <- save
+        _ <- setGlobalAlpha(0.5)
+        _ <- setFillStyle(Color.Black)
+        // _ <- fillRect(-dx / 2, 0, maxTextWidth * 1.4, (n + 1) * dy)
+        _ <- roundRect(-dx / 2, 0, maxTextWidth * 1.4, (n + 1) * dy, 6)
+        _ <- fill
+        _ <- restore
+
+        _ <- setFillStyle(config.textColor)
+        _ <- traces.zipWithIndex.traverse: (trace, i) =>
+          val y = (i + 1) * dy
+          val text = trace.label.getOrElse("?")
+          for
+            metric <- measureText(text)
+            bbt = metric
+              .asInstanceOf[js.Dynamic]
+              .actualBoundingBoxAscent
+              .asInstanceOf[Double]
+            bbb = metric
+              .asInstanceOf[js.Dynamic]
+              .actualBoundingBoxDescent
+              .asInstanceOf[Double]
+            adj = (bbt - bbb) / 2
+            _ <- fillText(
+              text,
+              trace.marker.toSize,
+              y + adj
+            )
+            _ <- trace.marker.draw(Point(0, y))
+          yield ()
         _ <- restore
       yield ()
 
@@ -153,11 +206,11 @@ object ScatterPlot:
                     _ <- restore
                   yield ()
                 else trace.marker.draw(at)
-
             }
           }
           _ <- restore
           _ <- kvGet[Point]("hover").flatMap(_.foldMapM(tooltip))
+          _ <- Monad[Draw].whenA(config.legend)(legend(traces))
         yield ()
 
     ff4s.canvas.render.loop(

@@ -83,3 +83,20 @@ object Gen:
     (r.nextLong(), cum(i))
 
   def listOfN[A](n: Int, g: Gen[A]): Gen[List[A]] = g.replicateA(n)
+
+  def printableChar: Gen[Char] = State: s =>
+    val r = scala.util.Random(s)
+    val c = r.nextPrintableChar
+    (r.nextLong(), c)
+
+  def alphaNumeric: Gen[Char] =
+    val number = between(48, 58).map(_.toChar)
+    val uppercase = between(65, 91).map(_.toChar)
+    val lowercase = between(97, 123).map(_.toChar)
+    (number, uppercase, lowercase).flatMapN((n, u, l) => Gen.choose(n, u, l))
+
+  def string(length: Int): Gen[String] =
+    printableChar.replicateA(length).map(_.mkString)
+
+  def alphaNumericString(length: Int): Gen[String] =
+    alphaNumeric.replicateA(length).map(_.mkString)

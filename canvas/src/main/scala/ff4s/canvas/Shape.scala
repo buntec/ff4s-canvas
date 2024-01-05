@@ -53,8 +53,8 @@ object Shape:
             _ <- save
             _ <- beginPath
             _ <- arc(at.x, at.y, radius, 0, 2 * math.Pi, false)
-            _ <- stroke.foldMapM(color => strokeStyle(color) *> Draw.stroke)
-            _ <- fill.foldMapM(color => fillStyle(color) *> Draw.fill)
+            _ <- stroke.foldMapM(color => setStrokeStyle(color) *> Draw.stroke)
+            _ <- fill.foldMapM(color => setFillStyle(color) *> Draw.fill)
             _ <- restore
           yield ()
 
@@ -67,7 +67,7 @@ object Shape:
             _ <- lineTo(at.x + h, at.y + h)
             _ <- moveTo(at.x + h, at.y - h)
             _ <- lineTo(at.x - h, at.y + h)
-            _ <- stroke.foldMapM(color => strokeStyle(color) *> Draw.stroke)
+            _ <- stroke.foldMapM(color => setStrokeStyle(color) *> Draw.stroke)
             _ <- restore
           yield ()
 
@@ -97,8 +97,8 @@ object Shape:
             _ <- lineTo(x2, y2)
             _ <- lineTo(x3, y3)
             _ <- closePath
-            _ <- stroke.foldMapM(color => strokeStyle(color) *> Draw.stroke)
-            _ <- fill.foldMapM(color => fillStyle(color) *> Draw.fill)
+            _ <- stroke.foldMapM(color => setStrokeStyle(color) *> Draw.stroke)
+            _ <- fill.foldMapM(color => setFillStyle(color) *> Draw.fill)
             _ <- restore
           yield ()
 
@@ -109,8 +109,8 @@ object Shape:
             _ <- save
             _ <- beginPath
             _ <- rect(x, y, width, height)
-            _ <- stroke.foldMapM(color => strokeStyle(color) *> Draw.stroke)
-            _ <- fill.foldMapM(color => fillStyle(color) *> Draw.fill)
+            _ <- stroke.foldMapM(color => setStrokeStyle(color) *> Draw.stroke)
+            _ <- fill.foldMapM(color => setFillStyle(color) *> Draw.fill)
             _ <- restore
           yield ()
 
