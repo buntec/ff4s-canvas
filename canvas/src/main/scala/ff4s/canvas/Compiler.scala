@@ -20,6 +20,7 @@ import cats.Id
 import cats.syntax.all.*
 import cats.~>
 import org.scalajs.dom
+
 import scalajs.js
 
 private[canvas] object Compiler:

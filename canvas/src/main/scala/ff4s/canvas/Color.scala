@@ -16,8 +16,8 @@
 
 package ff4s.canvas
 
-import cats.syntax.all.*
 import cats.Show
+import cats.syntax.all.*
 
 enum Color:
   // format: #DEB887

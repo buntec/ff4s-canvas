@@ -17,9 +17,9 @@
 package ff4s.canvas
 
 import cats.Monad
-import cats.syntax.all.*
 import cats.free.Free
 import cats.free.Free.*
+import cats.syntax.all.*
 import org.scalajs.dom.TextMetrics
 
 sealed trait DrawA[A]
