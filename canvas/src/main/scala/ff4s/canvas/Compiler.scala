@@ -123,8 +123,10 @@ private[canvas] object Compiler:
           // kv
           case KVPut(key, value) =>
             kvs(key) = value
+
           case KVGet(key) =>
             kvs.get(key).asInstanceOf[A]
+
           case KVDelete(key) =>
             kvs.remove(key)
             ()
@@ -141,6 +143,7 @@ private[canvas] object Compiler:
           case ClosePath() => ctx.closePath()
 
           case Clip() => ctx.clip()
+
           case Fill() => ctx.fill()
 
           case Fill2(path) =>
@@ -162,13 +165,14 @@ private[canvas] object Compiler:
           case SetShadowOffsetY(offset) =>
             ctx.shadowOffsetY = offset
 
-          case SetFillStyle(color) => {
+          case SetFillStyle(color) =>
             ctx.fillStyle = color.toString
-          }
+
           case Stroke() => ctx.stroke()
-          case SetStrokeStyle(color) => {
+
+          case SetStrokeStyle(color) =>
             ctx.strokeStyle = color.toString
-          }
+
           case ClearRect(x, y, w, h) => ctx.clearRect(x, y, w, h)
 
           case FillRect(x, y, w, h) => ctx.fillRect(x, y, w, h)
@@ -200,13 +204,13 @@ private[canvas] object Compiler:
             val p2d = Path.toPath2D(path)
             ctx.isPointInPath(p2d, x, y, domFillRule)
 
-          case SetLineWidth(width) => {
+          case SetLineWidth(width) =>
             ctx.lineWidth = width
-          }
-          case SetFont(font) => {
+
+          case SetFont(font) =>
             ctx.font = font.show
-          }
-          case SetTextAlign(align) => {
+
+          case SetTextAlign(align) =>
             ctx.textAlign = align match
               case TextAlign.Start  => "start"
               case TextAlign.End    => "end"
@@ -214,8 +218,7 @@ private[canvas] object Compiler:
               case TextAlign.Right  => "right"
               case TextAlign.Center => "center"
 
-          }
-          case SetTextBaseline(baseline) => {
+          case SetTextBaseline(baseline) =>
             ctx.textBaseline = baseline match
               case TextBaseline.Top         => "top"
               case TextBaseline.Middle      => "middle"
@@ -223,11 +226,12 @@ private[canvas] object Compiler:
               case TextBaseline.Hanging     => "hanging"
               case TextBaseline.Ideographic => "ideographic"
               case TextBaseline.Alphabetic  => "alphabetic"
-          }
-          case SetDirection(dir) => ??? // missing from org.scalajs.dom ?
 
-          case FillText(text, x, y, maxWidth) => {
+          case SetDirection(dir) => ??? // TODO: missing from org.scalajs.dom ?
+
+          case FillText(text, x, y, maxWidth) =>
             ctx.fillText(text, x, y)
-          }
+
           case Translate(x, y) => ctx.translate(x, y)
-          case Scale(x, y)     => ctx.scale(x, y)
+
+          case Scale(x, y) => ctx.scale(x, y)

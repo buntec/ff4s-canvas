@@ -115,7 +115,7 @@ object Shape:
           yield ()
 
   given Boundary[Shape] = new Boundary[Shape]:
-    def path(shape: Shape, at: Point): Path[Unit] = {
+    def path(shape: Shape, at: Point): Path[Unit] =
       import Path.*
       shape match
         case Circle(radius, stroke, fill) =>
@@ -155,5 +155,3 @@ object Shape:
         case Cross(sideLength, stroke) =>
           val h = sideLength / 2
           rect(at.x - h, at.y - h, sideLength, sideLength)
-
-    }

@@ -25,6 +25,7 @@ import cats.syntax.all._
 import ff4s.canvas.*
 import fs2.Stream
 import fs2.dom.Dom
+import monocle.syntax.all._
 import org.http4s.Uri
 
 object scatter:
@@ -47,7 +48,7 @@ object scatter:
         .replicateA(nPoints)
         .map(_.map((x, y) => Point(x, y)))
       fill <- Gen.boolean
-      color <- Color.gen
+      color <- Color.genHue(60.0, 60.0)
       markerSize = 12
       marker <- Gen.choose(
         Marker.Circle(markerSize, color, fill),
@@ -57,16 +58,20 @@ object scatter:
       )
     yield ScatterPlot.Trace(points, marker, label.some)
 
+  case class State(
+      traces: Option[List[ScatterPlot.Trace]] = None,
+      genS: Gen.S = Gen.setSeed(17L).run(Gen.init)(0)
+  )
+
 case class State[F[_]](
     uri: Option[Uri] = None,
     canvas: Option[fs2.dom.HtmlCanvasElement[F]] = None,
-    scatterTraces: Option[List[ScatterPlot.Trace]] = None,
-    genS: Gen.S = Gen.init
+    scatterPlot: scatter.State = scatter.State()
 )
 
 sealed trait Action[F[_]]
 
-object Action {
+object Action:
 
   case class Noop[F[_]]() extends Action[F]
 
@@ -79,16 +84,14 @@ object Action {
 
   case class RandomizeData[F[_]]() extends Action[F]
 
-}
-
 class App[F[_]: Dom](implicit val F: Async[F])
-    extends ff4s.App[F, State[F], Action[F]] {
+    extends ff4s.App[F, State[F], Action[F]]:
 
-  override val store = for {
+  override val store = for
     dispatcher <- Dispatcher.sequential[F]
 
     store <- ff4s.Store[F, State[F], Action[F]](State())(store =>
-      _ match {
+      _ match
         case Action.Noop() => _ -> None
         case Action.RandomizeData() =>
           state =>
@@ -96,18 +99,13 @@ class App[F[_]: Dom](implicit val F: Async[F])
               Gen
                 .between(1, 4)
                 .flatMap(n => scatter.genTrace.replicateA(n))
-                .run(state.genS)
-            state.copy(genS = nextState) ->
+                .run(state.scatterPlot.genS)
+            state.focus(_.scatterPlot.genS).replace(nextState) ->
               store.dispatch(Action.SetScatterPlotData(traces)).some
         case Action.SetScatterPlotData(traces) =>
-          _.copy(scatterTraces = traces.some) -> none
+          _.focus(_.scatterPlot.traces).replace(traces.some) -> none
         case Action.SetCanvas(canvas) => _.copy(canvas = canvas.some) -> none
-      }
     )
-
-    traces = store.state.map { s =>
-      s.scatterTraces.getOrElse(Nil)
-    }
 
     _ <- store.state
       .map(_.canvas)
@@ -117,7 +115,12 @@ class App[F[_]: Dom](implicit val F: Async[F])
       .switchMap(canvas =>
         Stream
           .resource(
-            ff4s.canvas.ScatterPlot(scatter.config, traces, canvas, dispatcher)
+            ff4s.canvas.ScatterPlot(
+              scatter.config,
+              store.state.map(_.scatterPlot.traces.getOrElse(Nil)),
+              canvas,
+              dispatcher
+            )
           )
           .evalMap(_ => F.never)
       )
@@ -126,8 +129,7 @@ class App[F[_]: Dom](implicit val F: Async[F])
       .background
 
     _ <- store.dispatch(Action.RandomizeData()).toResource
-
-  } yield store
+  yield store
 
   import dsl._
   import dsl.html._
@@ -135,9 +137,9 @@ class App[F[_]: Dom](implicit val F: Async[F])
   object components extends Buttons[F, State[F], Action[F]]
   import components.*
 
-  val heading = h1(cls := "m-4 text-3xl", "Examples")
+  val heading = h1(cls := "m-4 text-3xl", "ff4s-canvas examples")
 
-  override val view = useState { state =>
+  override val view = useState: state =>
     div(
       cls := "flex flex-col items-center h-screen bg-gray-800 text-gray-100 font-thin",
       heading,
@@ -154,9 +156,7 @@ class App[F[_]: Dom](implicit val F: Async[F])
             Action.SetCanvas(el.asInstanceOf[fs2.dom.HtmlCanvasElement[F]])
           )
         ),
+        "Use your mouse or touchpad to pan and zoom.",
         btn("randomize", Action.RandomizeData())
       )
     )
-  }
-
-}

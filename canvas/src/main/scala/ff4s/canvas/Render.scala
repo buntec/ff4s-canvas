@@ -48,7 +48,7 @@ def loop[F[_]: Dom, D: Eq: Transition](
     data: Signal[F, D],
     drawFrame: (DOMHighResTimeStamp, D) => Draw[Unit],
     config: Settings
-)(using F: Async[F]): Resource[F, Unit] = for {
+)(using F: Async[F]): Resource[F, Unit] = for
 
   sizeRef <- (canvas.offsetWidth, canvas.offsetHeight)
     .flatMapN((w, h) => SignallingRef.of[F, (Double, Double)]((w, h)))
@@ -73,7 +73,7 @@ def loop[F[_]: Dom, D: Eq: Transition](
     .background
 
   _ <- sizeRef.discrete
-    .switchMap { (width, height) =>
+    .switchMap: (width, height) =>
       Stream
         .bracket(F.delay:
           var keepGoing = true
@@ -96,7 +96,7 @@ def loop[F[_]: Dom, D: Eq: Transition](
             val cleanup = Draw.restore
 
             dispatcher.unsafeRunAndForget(
-              (F.realTime, currentAndPrevData.get).flatMapN {
+              (F.realTime, currentAndPrevData.get).flatMapN:
                 case (d0, (data, d, dataPrev, dPrev)) =>
                   val u0 = (d0 - d) / config.transitionDuration
                   val u = config.transitionEasing(u0)
@@ -110,7 +110,6 @@ def loop[F[_]: Dom, D: Eq: Transition](
                     if (keepGoing) {
                       handle = Some(dom.window.requestAnimationFrame(draw _))
                     }
-              }
             )
 
           draw(0)
@@ -120,9 +119,7 @@ def loop[F[_]: Dom, D: Eq: Transition](
             handle.foreach(dom.window.cancelAnimationFrame(_))
         )(identity)
         .evalMap(_ => F.never)
-    }
     .compile
     .drain
     .background
-
-} yield ()
+yield ()

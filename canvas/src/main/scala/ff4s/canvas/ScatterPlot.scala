@@ -73,8 +73,6 @@ object ScatterPlot:
         mp0 <- mousePos
         mt <- marginTransform
         mp = mt.invert(mp0)
-        // _ <- fillStyle(Color.Black)
-        // _ <- fillRect(mp.x + 0.02 * w, mp.y - 0.05 * h, 0.05 * w, 0.05 * h)
         _ <- setFillStyle(config.textColor)
         _ <- setFont(config.tickFont)
         _ <- fillText(
@@ -104,7 +102,6 @@ object ScatterPlot:
         _ <- save
         _ <- setGlobalAlpha(0.5)
         _ <- setFillStyle(Color.Black)
-        // _ <- fillRect(-dx / 2, 0, maxTextWidth * 1.4, (n + 1) * dy)
         _ <- roundRect(-dx / 2, 0, maxTextWidth * 1.4, (n + 1) * dy, 6)
         _ <- fill
         _ <- restore
@@ -185,8 +182,8 @@ object ScatterPlot:
 
           mp <- mousePos
           _ <- kvDelete("hover") // reset hover info
-          _ <- traces.traverse_ { trace =>
-            trace.points.traverse_ { point =>
+          _ <- traces.traverse_ : trace =>
+            trace.points.traverse_ : point =>
               val at = Point(xScale(point.x), yScale(point.y))
               val boundingPath = trace.marker.boundingPath(at)
               isPointInPath(
@@ -207,19 +204,16 @@ object ScatterPlot:
                     _ <- restore
                   yield ()
                 else trace.marker.draw(at)
-            }
-          }
+
           _ <- restore
           _ <- kvGet[Point]("hover").flatMap(_.foldMapM(tooltip))
           _ <- Monad[Draw].whenA(config.legend)(legend(traces))
         yield ()
 
-    ff4s.canvas.render.loop(
+    render.loop(
       elm,
       dispatcher,
       traces,
       drawFrame,
-      ff4s.canvas.render.Settings(
-        relMargin = 0.05
-      )
+      render.Settings(relMargin = 0.05)
     )

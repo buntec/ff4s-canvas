@@ -68,25 +68,23 @@ object Axes:
 
         // draw y-ticks
         _ <- setTextAlign(TextAlign.Right)
-        _ <- yTicks.traverse_ { tick =>
+        _ <- yTicks.traverse_ : tick =>
           for
             _ <- moveTo(0, a.yScale(tick))
             _ <- lineTo(a.yTickSize, a.yScale(tick))
             _ <- setTextBaseline(TextBaseline.Middle)
             _ <- fillText(tick.toString, -a.yTickSize, a.yScale(tick))
           yield ()
-        }
 
         // draw x-ticks
         _ <- setTextAlign(TextAlign.Center)
-        _ <- xTicks.traverse_ { tick =>
+        _ <- xTicks.traverse_ : tick =>
           for
             _ <- moveTo(a.xScale(tick), a.height - a.xTickSize)
             _ <- lineTo(a.xScale(tick), a.height)
             _ <- setTextBaseline(TextBaseline.Top)
             _ <- fillText(tick.toString, a.xScale(tick), a.height + a.xTickSize)
           yield ()
-        }
 
         _ <- stroke
 

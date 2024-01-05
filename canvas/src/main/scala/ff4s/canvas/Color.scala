@@ -117,6 +117,9 @@ object Color:
       Gen.between(0, 256),
     ).mapN((r, g, b) => Rgb(r, g, b))
 
+  def genHue(saturation: Double, lightness: Double): Gen[Color] =
+    Gen.between(0.0, 360.0).map(hue => Hsl(hue, saturation, lightness))
+
   def lerp(c1: Color, c2: Color, t: Double): Color =
     if t <= 0 then c1
     else if t >= 1 then c2
