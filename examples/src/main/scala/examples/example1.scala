@@ -137,12 +137,10 @@ class App[F[_]: Dom](implicit val F: Async[F])
   object components extends Buttons[F, State[F], Action[F]]
   import components.*
 
-  val heading = h1(cls := "m-4 text-3xl", "ff4s-canvas examples")
-
   override val view = useState: state =>
     div(
       cls := "flex flex-col items-center h-screen bg-gray-800 text-gray-100 font-thin",
-      heading,
+      h1(cls := "m-4 text-3xl", "ff4s-canvas examples"),
       div(
         cls := "m-2 flex flex-col items-center gap-2",
         h2(cls := "text-2xl", "Scatter Plot"),
