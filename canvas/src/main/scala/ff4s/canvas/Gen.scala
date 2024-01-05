@@ -22,6 +22,8 @@ import cats.syntax.all.*
 
 import scala.collection.View
 
+// reusing instances for opaque types is cumbersome
+// https://github.com/lampepfl/dotty/issues/10947
 private val stateMonadInstance: Monad[State[Gen.S, _]] = Monad[State[Gen.S, _]]
 
 opaque type Gen[A] = State[Gen.S, A]

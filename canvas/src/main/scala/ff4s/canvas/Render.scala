@@ -59,13 +59,13 @@ def loop[F[_]: Dom, D: Eq: Transition](
   ).evalTap(_.observe(canvas.asInstanceOf[fs2.dom.Element[F]]))
 
   currentAndPrevData <- (data.get, F.realTime)
-    .flatMapN((d, t) => F.ref((d, t, d, t)))
+    .flatMapN((d, t) => F.ref((d, t, d)))
     .toResource
 
   _ <- data.changes.discrete
     .evalMap(d =>
       F.realTime.flatMap(t =>
-        currentAndPrevData.update((d1, t1, _, _) => (d, t, d1, t1))
+        currentAndPrevData.update((d1, _, _) => (d, t, d1))
       )
     )
     .compile
@@ -97,7 +97,7 @@ def loop[F[_]: Dom, D: Eq: Transition](
 
             dispatcher.unsafeRunAndForget(
               (F.realTime, currentAndPrevData.get).flatMapN:
-                case (d0, (data, d, dataPrev, dPrev)) =>
+                case (d0, (data, d, dataPrev)) =>
                   val u0 = (d0 - d) / config.transitionDuration
                   val u = config.transitionEasing(u0)
                   val data0 = Transition[D](dataPrev, data, u)

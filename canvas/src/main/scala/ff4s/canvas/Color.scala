@@ -139,6 +139,8 @@ object Color:
     val b = (n & 0xff);
     Rgb(r, g, b)
 
+  // conversion methods translated from https://github.com/rktjmp/lush.nvim
+
   // assumes h, s, l are in [0, 1]
   private def hslToRgb(h: Double, s: Double, l: Double): Rgb =
     if s == 0 then Rgb((255 * l).toInt, (255 * l).toInt, (255 * l).toInt)

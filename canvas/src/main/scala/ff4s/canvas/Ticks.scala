@@ -39,7 +39,11 @@ object Ticks:
   private val e5 = math.sqrt(10)
   private val e2 = math.sqrt(2)
 
-  def tickSpec(start: Double, stop: Double, count: Int): (Long, Long, Double) =
+  private def tickSpec(
+      start: Double,
+      stop: Double,
+      count: Int
+  ): (Long, Long, Double) =
     require(count > 0)
     val step = (stop - start) / count
     val power = math.floor(math.log10(step))
