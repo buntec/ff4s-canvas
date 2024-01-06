@@ -139,8 +139,8 @@ class App[F[_]: Dom](implicit val F: Async[F])
 
   override val view = useState: state =>
     div(
-      cls := "flex flex-col items-center h-screen bg-gray-800 text-gray-100 font-thin",
-      h1(cls := "m-4 text-3xl", "ff4s-canvas examples"),
+      cls := "flex flex-col items-center bg-gray-800 text-gray-100 font-thin",
+      h1(cls := "m-4 text-3xl", "ff4s-canvas"),
       div(
         cls := "m-2 flex flex-col items-center gap-2",
         h2(cls := "text-2xl", "Scatter Plot"),
