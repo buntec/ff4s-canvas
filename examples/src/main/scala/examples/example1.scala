@@ -32,8 +32,8 @@ object scatter:
   val config = ScatterPlot.Config(
     nXTicks = 10,
     nYTicks = 10,
-    tickFont =
-      Font(FontSize.Px(14), FontFamily.SystemUI).withWeight(FontWeight.Thin),
+    tickFont = Font(FontSize.Px(12), FontFamily.Name("Roboto"))
+      .withWeight(FontWeight.Light),
     gridColor = Color.Gray,
     textColor = Color.White,
     axisColor = Color.Silver,
@@ -139,7 +139,7 @@ class App[F[_]: Dom](implicit val F: Async[F])
 
   override val view = useState: state =>
     div(
-      cls := "flex flex-col items-center bg-gray-800 text-gray-100 font-thin",
+      cls := "min-h-screen flex flex-col items-center bg-gray-800 text-gray-100 font-sans font-thin",
       h1(cls := "m-4 text-3xl", "ff4s-canvas"),
       div(
         cls := "m-2 flex flex-col items-center gap-2",

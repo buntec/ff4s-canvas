@@ -17,6 +17,7 @@
 package ff4s.canvas
 
 import cats.Show
+import cats.data.NonEmptyList
 import cats.syntax.all.*
 
 final case class Font(
@@ -25,7 +26,7 @@ final case class Font(
     weight: Option[FontWeight],
     size: FontSize,
     lineHeight: Option[LineHeight],
-    family: FontFamily
+    families: NonEmptyList[FontFamily]
 ):
 
   def withStyle(style: FontStyle): Font = this.copy(style = style.some)
@@ -38,7 +39,10 @@ final case class Font(
 object Font:
 
   def apply(size: FontSize, family: FontFamily): Font =
-    Font(None, None, None, size, None, family)
+    Font(None, None, None, size, None, NonEmptyList.one(family))
+
+  def apply(size: FontSize, family: FontFamily, fallBack: FontFamily): Font =
+    Font(None, None, None, size, None, NonEmptyList.of(family, fallBack))
 
   given Show[Font] = Show.show(f =>
     List(
@@ -47,7 +51,7 @@ object Font:
       f.weight.map(_.show),
       f.size.show.some,
       f.lineHeight.map(_.show),
-      f.family.show.some
+      f.families.map(_.show).toList.mkString(", ").some
     ).collect:
       case Some(a) => a
     .mkString(" ")
@@ -126,10 +130,12 @@ object LineHeight:
 
 enum FontFamily:
   case SystemUI, Serif, SansSerif, Monospace, Cursive,
-    UISerif, UISansSerif, UIMonospace
+    UISerif, UISansSerif, UIMonospace, Inherit
+  case Name(name: String) extends FontFamily
 
 object FontFamily:
   given Show[FontFamily] = Show.show(_ match
+    case Inherit     => "inherit"
     case SystemUI    => "system-ui"
     case Serif       => "serif"
     case SansSerif   => "sans-serif"
@@ -138,4 +144,5 @@ object FontFamily:
     case UISerif     => "ui-serif"
     case UISansSerif => "ui-sans-serif"
     case UIMonospace => "ui-monospace"
+    case Name(name)  => s"\"$name\""
   )

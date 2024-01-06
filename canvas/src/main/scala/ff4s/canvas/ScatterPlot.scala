@@ -94,15 +94,22 @@ object ScatterPlot:
         _ <- translate(w - 4 * dx, dy)
         _ <- setFont(config.tickFont)
         n = traces.length
+        maxMarkerSize = traces.map(_.marker.toSize).max
         maxTextWidth <- traces
           .map(_.label.getOrElse("?"))
           .traverse(s => measureText(s))
           .map(_.map(_.width).max)
 
         _ <- save
-        _ <- setGlobalAlpha(0.5)
+        _ <- setGlobalAlpha(0.4)
         _ <- setFillStyle(Color.Black)
-        _ <- roundRect(-dx / 2, 0, maxTextWidth * 1.4, (n + 1) * dy, 6)
+        _ <- roundRect(
+          -dx / 2,
+          0,
+          (maxMarkerSize + maxTextWidth) * 1.3,
+          (n + 1) * dy,
+          6
+        )
         _ <- fill
         _ <- restore
 
