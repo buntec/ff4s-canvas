@@ -3,15 +3,26 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>ff4s-canvas-example</title>
+  <title>ff4s canvas</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        fontFamily: {
+          sans: ['"Roboto", sans-serif'],
+        },
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap"
+    rel="stylesheet">
 </head>
 
 <body>
   <div id="app"></div>
-  <script type="text/javascript">
-    var process = {env: {'CATS_EFFECT_TRACING_MODE': 'NONE'}};
-  </script>
   <script type="text/javascript" src="main.js"></script>
 </body>
 
