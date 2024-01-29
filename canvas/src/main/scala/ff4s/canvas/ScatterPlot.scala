@@ -89,7 +89,7 @@ object ScatterPlot:
         _ <- save
         w <- width
         h <- height
-        dy = 0.05 * h
+        dy = 0.04 * h
         dx = 0.04 * w
         _ <- translate(w - 4 * dx, dy)
         _ <- setFont(config.tickFont)
@@ -155,16 +155,20 @@ object ScatterPlot:
               Scale.Domain(xMin, xMax),
               Scale.Range(0, w)
             )
-            .get
+            .getOrElse(throw new Exception("failed to build x-scale"))
           yScale0 = Scale
             .linear(
               Scale.Domain(yMin, yMax),
               Scale.Range(h, 0)
             )
-            .get
+            .getOrElse(throw new Exception("failed to build y-scale"))
           trans <- transform
-          xScale = trans.rescaleX(xScale0).get
-          yScale = trans.rescaleY(yScale0).get
+          xScale = trans
+            .rescaleX(xScale0)
+            .getOrElse(throw new Exception("failed to rescale x-scale"))
+          yScale = trans
+            .rescaleY(yScale0)
+            .getOrElse(throw new Exception("failed to rescale y-scale"))
           xTickSize = 0.01 * h
           yTickSize = 0.01 * w
           _ <- Axes(

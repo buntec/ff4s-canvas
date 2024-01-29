@@ -105,6 +105,7 @@ object DrawA:
   case class GetMarginTransform() extends DrawA[Transform]
   case class GetWidth() extends DrawA[Int]
   case class GetHeight() extends DrawA[Int]
+  case class Clear() extends DrawA[Unit]
 
   // simple KV store
   case class KVPut[T](key: String, value: T) extends DrawA[Unit]
@@ -259,6 +260,9 @@ object Draw:
 
   val height: Draw[Int] =
     liftF[DrawA, Int](GetHeight())
+
+  val clear: Draw[Unit] =
+    liftF[DrawA, Unit](Clear())
 
   // kv
 

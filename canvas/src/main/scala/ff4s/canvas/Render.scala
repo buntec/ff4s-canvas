@@ -50,13 +50,23 @@ def loop[F[_]: Dom, D: Eq: Transition](
     config: Settings
 )(using F: Async[F]): Resource[F, Unit] = for
 
-  sizeRef <- (canvas.offsetWidth, canvas.offsetHeight)
+  offsetParent <- canvas.offsetParent
+    .flatMap(po =>
+      F.fromOption(
+        po,
+        new Exception("canvas element should have an offset parent")
+      )
+    )
+    .map(_.asInstanceOf[fs2.dom.HtmlElement[F]])
+    .toResource
+
+  sizeRef <- (offsetParent.offsetWidth, canvas.offsetHeight)
     .flatMapN((w, h) => SignallingRef.of[F, (Double, Double)]((w, h)))
     .toResource
 
   _ <- ResizeObserver[F]((a, _) =>
     sizeRef.set((a.head.contentRect.width, a.head.contentRect.height))
-  ).evalTap(_.observe(canvas.asInstanceOf[fs2.dom.Element[F]]))
+  ).evalTap(rs => canvas.offsetParent.flatMap(p => p.foldMapM(rs.observe(_))))
 
   currentAndPrevData <- (data.get, F.realTime)
     .flatMapN((d, t) => F.ref((d, t, d)))
@@ -73,7 +83,9 @@ def loop[F[_]: Dom, D: Eq: Transition](
     .background
 
   _ <- sizeRef.discrete
-    .switchMap: (width, height) =>
+    .switchMap: (w0, h0) =>
+      val width = w0
+      val height = h0
       Stream
         .bracket(F.delay:
           var keepGoing = true
@@ -89,8 +101,8 @@ def loop[F[_]: Dom, D: Eq: Transition](
           def draw(t: Double): Unit =
             val setup = (
               Draw.save,
-              Draw.clearRect(0, 0, width, height),
-              Draw.marginTransform.flatMap(_.applyToCtx)
+              Draw.clear,
+              Draw.marginTransform.flatMap(_.applyToCtx),
             ).tupled
 
             val cleanup = Draw.restore

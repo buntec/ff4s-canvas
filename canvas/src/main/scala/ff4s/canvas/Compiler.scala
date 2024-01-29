@@ -27,21 +27,20 @@ private[canvas] object Compiler:
 
   def apply(
       canvas: dom.HTMLCanvasElement,
-      initialWidth: Int,
-      initialHeight: Int,
+      width: Int,
+      height: Int,
       settings: render.Settings
   ): DrawA ~> Id =
-
-    canvas.width = initialWidth
-    canvas.height = initialHeight
-
     val kvs = collection.mutable.Map.empty[String, Any]
 
     val ctx: dom.CanvasRenderingContext2D =
       canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
 
-    val width = canvas.width
-    val height = canvas.height
+    val devicePixelRatio = dom.window.devicePixelRatio
+    canvas.width = (devicePixelRatio * width).toInt
+    canvas.height = (devicePixelRatio * height).toInt
+    canvas.style.width = s"${width}px"
+    canvas.style.height = s"${height}px"
 
     val marginTop = height * settings.relMargin
     val marginBottom = height * settings.relMargin
@@ -51,7 +50,10 @@ private[canvas] object Compiler:
     val effectiveWidth = (width - marginLeft - marginRight).toInt
     val effectiveHeight = (height - marginTop - marginBottom).toInt
 
-    val marginTransform = Transform.translate(marginLeft, marginTop)
+    val marginTransform =
+      Transform.translate(marginLeft, marginTop) andThen Transform.scale(
+        devicePixelRatio
+      )
 
     var transform = Transform.identity
     var mousePos = Point(0, 0)
@@ -69,12 +71,13 @@ private[canvas] object Compiler:
 
     def onMouseMove(ev: dom.MouseEvent) =
       mousePos = mouse.getPos(ev, ctx)
+      val p1 = marginTransform.inverse(dragStartPos)
+      val p2 = marginTransform.inverse(mousePos)
       if (mouseDown) {
-        val deltaX = mousePos.x - dragStartPos.x
-        val deltaY = mousePos.y - dragStartPos.y
-        transform = transformOnDragStart.andThen(
-          Transform.translate(deltaX, deltaY)
-        )
+        val deltaX = p2.x - p1.x
+        val deltaY = p2.y - p1.y
+        transform =
+          transformOnDragStart andThen Transform.translate(deltaX, deltaY)
       }
 
     canvas.addEventListener(
@@ -119,6 +122,11 @@ private[canvas] object Compiler:
           case GetTransform()       => transform
           case GetMousePos()        => mousePos
           case GetMarginTransform() => marginTransform
+          case Clear() =>
+            ctx.save()
+            ctx.setTransform(1, 0, 0, 1, 0, 0) // identity
+            ctx.clearRect(0, 0, canvas.width, canvas.height)
+            ctx.restore()
 
           // kv
           case KVPut(key, value) =>
