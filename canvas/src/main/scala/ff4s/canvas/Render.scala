@@ -50,23 +50,16 @@ def loop[F[_]: Dom, D: Eq: Transition](
     config: Settings
 )(using F: Async[F]): Resource[F, Unit] = for
 
-  offsetParent <- canvas.offsetParent
-    .flatMap(po =>
-      F.fromOption(
-        po,
-        new Exception("canvas element should have an offset parent")
-      )
-    )
-    .map(_.asInstanceOf[fs2.dom.HtmlElement[F]])
-    .toResource
-
-  sizeRef <- (offsetParent.offsetWidth, canvas.offsetHeight)
+  sizeRef <- (canvas.offsetWidth, canvas.offsetHeight)
     .flatMapN((w, h) => SignallingRef.of[F, (Double, Double)]((w, h)))
     .toResource
 
   _ <- ResizeObserver[F]((a, _) =>
-    sizeRef.set((a.head.contentRect.width, a.head.contentRect.height))
-  ).evalTap(rs => canvas.offsetParent.flatMap(p => p.foldMapM(rs.observe(_))))
+    // `head` calls are safe b/c the observed element is a <canvas>
+    val h = a.head.borderBoxSize.head.blockSize
+    val w = a.head.borderBoxSize.head.inlineSize
+    sizeRef.set((w, h))
+  ).evalTap(_.observe(canvas))
 
   currentAndPrevData <- (data.get, F.realTime)
     .flatMapN((d, t) => F.ref((d, t, d)))
@@ -83,9 +76,7 @@ def loop[F[_]: Dom, D: Eq: Transition](
     .background
 
   _ <- sizeRef.discrete
-    .switchMap: (w0, h0) =>
-      val width = w0
-      val height = h0
+    .switchMap: (width, height) =>
       Stream
         .bracket(F.delay:
           var keepGoing = true

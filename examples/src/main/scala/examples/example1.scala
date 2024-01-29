@@ -144,16 +144,12 @@ class App[F[_]: Dom](implicit val F: Async[F])
       div(
         cls := "m-2 flex flex-col items-center gap-2",
         h2(cls := "text-2xl", "Scatter Plot"),
-        div(
-          cls := "relative sm:w-[500px] sm:h-[400px] md:w-[600px] md:h-[500px] lg:w-[800px] lg:h-[600px] w-[300px] h-[300px]",
-          canvasTag(
-            styleAttr := "position: absolute",
-            cls := "border rounded border-gray-500",
-            idAttr := "scatter-plot",
-            key := "scatter-plot",
-            insertHook := (el =>
-              Action.SetCanvas(el.asInstanceOf[fs2.dom.HtmlCanvasElement[F]])
-            )
+        canvasTag(
+          cls := "border rounded border-gray-500 sm:w-[500px] sm:h-[400px] md:w-[600px] md:h-[500px] lg:w-[800px] lg:h-[600px] w-[300px] h-[300px]",
+          idAttr := "scatter-plot",
+          key := "scatter-plot",
+          insertHook := (el =>
+            Action.SetCanvas(el.asInstanceOf[fs2.dom.HtmlCanvasElement[F]])
           )
         ),
         "Use your mouse or touchpad to pan and zoom.",

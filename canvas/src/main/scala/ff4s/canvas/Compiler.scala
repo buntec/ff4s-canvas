@@ -27,8 +27,8 @@ private[canvas] object Compiler:
 
   def apply(
       canvas: dom.HTMLCanvasElement,
-      width: Int,
-      height: Int,
+      cssPixelWidth: Int,
+      cssPixelHeight: Int,
       settings: render.Settings
   ): DrawA ~> Id =
     val kvs = collection.mutable.Map.empty[String, Any]
@@ -36,11 +36,12 @@ private[canvas] object Compiler:
     val ctx: dom.CanvasRenderingContext2D =
       canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
 
+    val width = cssPixelWidth // should be equal to canvas.style.width in px
+    val height = cssPixelHeight // should be equal to canvas.style.height in px
+
     val devicePixelRatio = dom.window.devicePixelRatio
     canvas.width = (devicePixelRatio * width).toInt
     canvas.height = (devicePixelRatio * height).toInt
-    canvas.style.width = s"${width}px"
-    canvas.style.height = s"${height}px"
 
     val marginTop = height * settings.relMargin
     val marginBottom = height * settings.relMargin
