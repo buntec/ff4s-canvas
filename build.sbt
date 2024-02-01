@@ -26,10 +26,10 @@ val site: TaskKey[File] = taskKey[File]("Generate static site")
 lazy val scalajsDomVersion = "2.8.0"
 lazy val circeVersion = "0.14.6"
 lazy val catsVersion = "2.10.0"
-lazy val catsEffectVersion = "3.5.2"
-lazy val fs2Version = "3.9.3"
+lazy val catsEffectVersion = "3.5.3"
+lazy val fs2Version = "3.9.4"
 lazy val fs2DomVersion = "0.2.1"
-lazy val ff4sVersion = "0.18.0"
+lazy val ff4sVersion = "0.19.0"
 lazy val monocleVersion = "3.2.0"
 
 lazy val root =
