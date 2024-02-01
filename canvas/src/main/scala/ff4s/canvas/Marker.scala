@@ -20,33 +20,41 @@ import cats.syntax.all.*
 
 enum Marker:
   case Circle(size: Double, color: Color, fill: Boolean)
-  case Triangle(size: Double, color: Color, fill: Boolean)
+  case Triangle(
+      size: Double,
+      color: Color,
+      fill: Boolean,
+      centered: Boolean = true,
+      isUp: Boolean = true
+  )
   case Square(size: Double, color: Color, fill: Boolean)
   case Cross(size: Double, color: Color)
 
   def withSize(size: Double): Marker = this match
-    case Circle(_, color, fill)   => Circle(size, color, fill)
-    case Triangle(_, color, fill) => Triangle(size, color, fill)
-    case Square(_, color, fill)   => Square(size, color, fill)
-    case Cross(_, color)          => Cross(size, color)
+    case Circle(_, color, fill) => Circle(size, color, fill)
+    case Triangle(_, color, fill, centered, isUp) =>
+      Triangle(size, color, fill, centered, isUp)
+    case Square(_, color, fill) => Square(size, color, fill)
+    case Cross(_, color)        => Cross(size, color)
 
   def withColor(color: Color): Marker = this match
-    case Circle(size, _, fill)   => Circle(size, color, fill)
-    case Triangle(size, _, fill) => Triangle(size, color, fill)
-    case Square(size, _, fill)   => Square(size, color, fill)
-    case Cross(size, _)          => Cross(size, color)
+    case Circle(size, _, fill) => Circle(size, color, fill)
+    case Triangle(size, _, fill, centered, isUp) =>
+      Triangle(size, color, fill, centered, isUp)
+    case Square(size, _, fill) => Square(size, color, fill)
+    case Cross(size, _)        => Cross(size, color)
 
   def toSize: Double = this match
-    case Circle(size, _, _)   => size
-    case Triangle(size, _, _) => size
-    case Square(size, _, _)   => size
-    case Cross(size, _)       => size
+    case Circle(size, _, _)         => size
+    case Triangle(size, _, _, _, _) => size
+    case Square(size, _, _)         => size
+    case Cross(size, _)             => size
 
   def toColor: Color = this match
-    case Circle(_, color, _)   => color
-    case Triangle(_, color, _) => color
-    case Square(_, color, _)   => color
-    case Cross(_, color)       => color
+    case Circle(_, color, _)         => color
+    case Triangle(_, color, _, _, _) => color
+    case Square(_, color, _)         => color
+    case Cross(_, color)             => color
 
 object Marker:
 
@@ -63,12 +71,12 @@ object Marker:
             at
           )
 
-        case Triangle(size, color, fill) =>
+        case Triangle(size, color, fill, centered, isUp) =>
           Drawable[Shape].draw(
             Shape.EquilateralTriangle(
               size,
-              true,
-              Direction.Up,
+              centered,
+              if isUp then Direction.Up else Direction.Down,
               color.some,
               fill.guard[Option].as(color)
             ),
@@ -109,12 +117,12 @@ object Marker:
             at
           )
 
-        case Triangle(size, color, fill) =>
+        case Triangle(size, color, fill, centered, isUp) =>
           Boundary[Shape].path(
             Shape.EquilateralTriangle(
               size,
-              true,
-              Direction.Up,
+              centered,
+              if isUp then Direction.Up else Direction.Down,
               None,
               None
             ),

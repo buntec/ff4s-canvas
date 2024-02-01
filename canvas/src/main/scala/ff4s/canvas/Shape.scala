@@ -85,7 +85,7 @@ object Shape:
             case Direction.Down => -1
 
           val x1 = at.x
-          val y1 = if centered then at.y - h / 2 else at.y
+          val y1 = if centered then at.y - sign * h / 2 else at.y
           val x2 = x1 - l / 2
           val y2 = y1 + sign * h
           val x3 = x1 + l / 2
