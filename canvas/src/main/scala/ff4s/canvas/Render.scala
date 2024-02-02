@@ -37,7 +37,7 @@ case class Settings(
     minZoom: Double = 0.2,
     maxZoom: Double = 5.0,
     zoomSensitivity: Double = 0.001,
-    relMargin: Double = 0.01,
+    margins: Margins,
     transitionDuration: FiniteDuration = 500.millis,
     transitionEasing: Easing = Easing.CubicInOut
 )

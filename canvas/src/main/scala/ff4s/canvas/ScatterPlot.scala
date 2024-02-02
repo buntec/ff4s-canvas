@@ -226,5 +226,5 @@ object ScatterPlot:
       dispatcher,
       traces,
       drawFrame,
-      render.Settings(relMargin = 0.05)
+      render.Settings(margins = Margins.uniformRelative(0.05))
     )

@@ -43,10 +43,18 @@ private[canvas] object Compiler:
     canvas.width = (devicePixelRatio * width).toInt
     canvas.height = (devicePixelRatio * height).toInt
 
-    val marginTop = height * settings.relMargin
-    val marginBottom = height * settings.relMargin
-    val marginLeft = width * settings.relMargin
-    val marginRight = width * settings.relMargin
+    val marginTop = settings.margins.top match
+      case Margin.Absolute(px) => px
+      case Margin.Relative(p)  => (height * p).toInt
+    val marginBottom = settings.margins.bottom match
+      case Margin.Absolute(px) => px
+      case Margin.Relative(p)  => (height * p).toInt
+    val marginLeft = settings.margins.left match
+      case Margin.Absolute(px) => px
+      case Margin.Relative(p)  => (width * p).toInt
+    val marginRight = settings.margins.right match
+      case Margin.Absolute(px) => px
+      case Margin.Relative(p)  => (width * p).toInt
 
     val effectiveWidth = (width - marginLeft - marginRight).toInt
     val effectiveHeight = (height - marginTop - marginBottom).toInt
