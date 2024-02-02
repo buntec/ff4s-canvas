@@ -34,6 +34,7 @@ object DrawA:
   case class SetGlobalAlpha(alpha: Double) extends DrawA[Unit]
   case class SetStrokeStyle(color: Color) extends DrawA[Unit]
   case class SetLineWidth(width: Double) extends DrawA[Unit]
+  case class SetLineDash(pattern: List[Double]) extends DrawA[Unit]
   case class SetFont(font: Font) extends DrawA[Unit]
   case class SetTextAlign(align: TextAlign) extends DrawA[Unit]
   case class SetTextBaseline(baseline: TextBaseline) extends DrawA[Unit]
@@ -219,6 +220,9 @@ object Draw:
 
   def setLineWidth(width: Double): Draw[Unit] =
     liftF[DrawA, Unit](SetLineWidth(width))
+
+  def setLineDash(pattern: List[Double]): Draw[Unit] =
+    liftF[DrawA, Unit](SetLineDash(pattern))
 
   def setFont(font: Font): Draw[Unit] =
     liftF[DrawA, Unit](SetFont(font))

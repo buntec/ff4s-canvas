@@ -216,6 +216,9 @@ private[canvas] object Compiler:
           case SetLineWidth(width) =>
             ctx.lineWidth = width
 
+          case SetLineDash(pattern) =>
+            ctx.setLineDash(js.Array(pattern*))
+
           case SetFont(font) =>
             ctx.font = font.show
 
