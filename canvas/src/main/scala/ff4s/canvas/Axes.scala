@@ -30,7 +30,11 @@ final case class Axes(
     tickFont: Font,
     axisColor: Color,
     textColor: Color,
-    gridColor: Color
+    gridColor: Color,
+    xTickFormat: Double => String = _.toString,
+    yTickFormat: Double => String = _.toString,
+    xTickFilter: Double => Boolean = _ => true,
+    yTickFilter: Double => Boolean = _ => true
 )
 
 object Axes:
@@ -44,12 +48,16 @@ object Axes:
           a.yScale.inverse(0.0),
           a.nYTicks
         )
+        .filter(a.yTickFilter)
+
       val xTicks = Ticks
         .ticks(
           a.xScale.inverse(a.xTickSize),
           a.xScale.inverse(a.width),
           a.nXTicks
         )
+        .filter(a.xTickFilter)
+
       for
         _ <- save
         _ <- translate(at.x, at.y)
@@ -73,7 +81,7 @@ object Axes:
             _ <- moveTo(0, a.yScale(tick))
             _ <- lineTo(a.yTickSize, a.yScale(tick))
             _ <- setTextBaseline(TextBaseline.Middle)
-            _ <- fillText(tick.toString, -a.yTickSize, a.yScale(tick))
+            _ <- fillText(a.yTickFormat(tick), -a.yTickSize, a.yScale(tick))
           yield ()
 
         // draw x-ticks
@@ -83,7 +91,11 @@ object Axes:
             _ <- moveTo(a.xScale(tick), a.height - a.xTickSize)
             _ <- lineTo(a.xScale(tick), a.height)
             _ <- setTextBaseline(TextBaseline.Top)
-            _ <- fillText(tick.toString, a.xScale(tick), a.height + a.xTickSize)
+            _ <- fillText(
+              a.xTickFormat(tick),
+              a.xScale(tick),
+              a.height + a.xTickSize
+            )
           yield ()
 
         _ <- stroke
