@@ -1,4 +1,5 @@
 Global / onChangedBuildSource := ReloadOnSourceChanges
+Global / resolvers += "Sonatype S01 OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots"
 
 ThisBuild / tlBaseVersion := "0.0"
 
@@ -27,7 +28,7 @@ lazy val catsVersion = "2.10.0"
 lazy val catsEffectVersion = "3.5.3"
 lazy val fs2Version = "3.9.4"
 lazy val fs2DomVersion = "0.2.1"
-lazy val ff4sVersion = "0.21.0"
+lazy val ff4sVersion = "0.22-2b55c7f-SNAPSHOT"
 lazy val monocleVersion = "3.2.0"
 
 lazy val root =

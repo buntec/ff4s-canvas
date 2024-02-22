@@ -84,8 +84,34 @@ object Action:
 
   case class RandomizeData[F[_]]() extends Action[F]
 
+trait View[F[_]] extends Buttons[State[F], Action[F]]:
+  dsl: ff4s.Dsl[State[F], Action[F]] =>
+
+  import html._
+
+  val view = useState: state =>
+    div(
+      cls := "min-h-screen flex flex-col items-center bg-gray-800 text-gray-100 font-sans font-thin",
+      h1(cls := "m-4 text-3xl", "ff4s-canvas"),
+      div(
+        cls := "m-2 flex flex-col items-center gap-2",
+        h2(cls := "text-2xl", "Scatter Plot"),
+        canvasTag(
+          cls := "border rounded border-gray-500 sm:w-[500px] sm:h-[400px] md:w-[600px] md:h-[500px] lg:w-[800px] lg:h-[600px] w-[300px] h-[300px]",
+          idAttr := "scatter-plot",
+          key := "scatter-plot",
+          insertHook := (el =>
+            Action.SetCanvas(el.asInstanceOf[fs2.dom.HtmlCanvasElement[F]])
+          )
+        ),
+        "Use your mouse or touchpad to pan and zoom.",
+        btn("randomize", Action.RandomizeData())
+      )
+    )
+
 class App[F[_]: Dom](implicit val F: Async[F])
-    extends ff4s.App[F, State[F], Action[F]]:
+    extends ff4s.App[F, State[F], Action[F]]
+    with View[F]:
 
   override val store = for
     dispatcher <- Dispatcher.sequential[F]
@@ -130,29 +156,3 @@ class App[F[_]: Dom](implicit val F: Async[F])
 
     _ <- store.dispatch(Action.RandomizeData()).toResource
   yield store
-
-  import dsl._
-  import dsl.html._
-
-  object components extends Buttons[F, State[F], Action[F]]
-  import components.*
-
-  override val view = useState: state =>
-    div(
-      cls := "min-h-screen flex flex-col items-center bg-gray-800 text-gray-100 font-sans font-thin",
-      h1(cls := "m-4 text-3xl", "ff4s-canvas"),
-      div(
-        cls := "m-2 flex flex-col items-center gap-2",
-        h2(cls := "text-2xl", "Scatter Plot"),
-        canvasTag(
-          cls := "border rounded border-gray-500 sm:w-[500px] sm:h-[400px] md:w-[600px] md:h-[500px] lg:w-[800px] lg:h-[600px] w-[300px] h-[300px]",
-          idAttr := "scatter-plot",
-          key := "scatter-plot",
-          insertHook := (el =>
-            Action.SetCanvas(el.asInstanceOf[fs2.dom.HtmlCanvasElement[F]])
-          )
-        ),
-        "Use your mouse or touchpad to pan and zoom.",
-        btn("randomize", Action.RandomizeData())
-      )
-    )

@@ -16,19 +16,16 @@
 
 package examples
 
-trait Buttons[F[_], S, A]:
+trait Buttons[S, A]:
+  dsl: ff4s.Dsl[S, A] =>
 
-  def btnImpl(
+  private def btnImpl(
       label0: String,
       onClick0: A,
       cls0: String,
       isDisabled: S => Boolean = _ => false
-  )(implicit
-      dsl: ff4s.Dsl[F, S, A]
-  ): dsl.V =
-    import dsl._
-    import dsl.html._
-
+  ): V =
+    import html._
     useState: state =>
       button(
         cls := cls0,
@@ -37,9 +34,11 @@ trait Buttons[F[_], S, A]:
         label0
       )
 
-  def btn(label: String, onClick0: A, isDisabled: S => Boolean = _ => false)(
-      implicit dsl: ff4s.Dsl[F, S, A]
-  ): dsl.V = btnImpl(
+  def btn(
+      label: String,
+      onClick0: A,
+      isDisabled: S => Boolean = _ => false
+  ): V = btnImpl(
     label,
     onClick0,
     "px-3 py-2 border rounded bg-gray-800 hover:bg-gray-700 hover:scale-105 active:scale-100",
@@ -50,6 +49,4 @@ trait Buttons[F[_], S, A]:
       label: String,
       onClick0: A,
       isDisabled: S => Boolean = _ => false
-  )(implicit
-      dsl: ff4s.Dsl[F, S, A]
-  ): dsl.V = btnImpl(label, onClick0, "px-2 py-1 border rounded", isDisabled)
+  ): V = btnImpl(label, onClick0, "px-2 py-1 border rounded", isDisabled)
