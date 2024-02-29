@@ -114,7 +114,7 @@ object Color:
     (
       Gen.between(0, 256),
       Gen.between(0, 256),
-      Gen.between(0, 256),
+      Gen.between(0, 256)
     ).mapN((r, g, b) => Rgb(r, g, b))
 
   def genHue(saturation: Double, lightness: Double): Gen[Color] =

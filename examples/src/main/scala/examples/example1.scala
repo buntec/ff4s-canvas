@@ -18,14 +18,14 @@ package examples
 package example1
 
 import cats.effect.Async
-import cats.effect.implicits._
+import cats.effect.implicits.*
 import cats.effect.std.Dispatcher
 import cats.kernel.Eq
-import cats.syntax.all._
+import cats.syntax.all.*
 import ff4s.canvas.*
 import fs2.Stream
 import fs2.dom.Dom
-import monocle.syntax.all._
+import monocle.syntax.all.*
 import org.http4s.Uri
 
 object scatter:
@@ -87,7 +87,7 @@ object Action:
 trait View[F[_]] extends Buttons[State[F], Action[F]]:
   dsl: ff4s.Dsl[State[F], Action[F]] =>
 
-  import html._
+  import html.*
 
   val view = useState: state =>
     div(
@@ -109,7 +109,7 @@ trait View[F[_]] extends Buttons[State[F], Action[F]]:
       )
     )
 
-class App[F[_]: Dom](implicit val F: Async[F])
+class App[F[_]: Dom](using F: Async[F])
     extends ff4s.App[F, State[F], Action[F]]
     with View[F]:
 
@@ -117,20 +117,19 @@ class App[F[_]: Dom](implicit val F: Async[F])
     dispatcher <- Dispatcher.sequential[F]
 
     store <- ff4s.Store[F, State[F], Action[F]](State())(store =>
-      _ match
-        case Action.Noop() => _ -> None
-        case Action.RandomizeData() =>
-          state =>
-            val (nextState, traces) =
-              Gen
-                .between(1, 4)
-                .flatMap(n => scatter.genTrace.replicateA(n))
-                .run(state.scatterPlot.genS)
-            state.focus(_.scatterPlot.genS).replace(nextState) ->
-              store.dispatch(Action.SetScatterPlotData(traces)).some
-        case Action.SetScatterPlotData(traces) =>
-          _.focus(_.scatterPlot.traces).replace(traces.some) -> none
-        case Action.SetCanvas(canvas) => _.copy(canvas = canvas.some) -> none
+      case (Action.Noop(), state) => state -> F.unit
+      case (Action.RandomizeData(), state) =>
+        val (nextState, traces) =
+          Gen
+            .between(1, 4)
+            .flatMap(n => scatter.genTrace.replicateA(n))
+            .run(state.scatterPlot.genS)
+        state.focus(_.scatterPlot.genS).replace(nextState) ->
+          store.dispatch(Action.SetScatterPlotData(traces))
+      case (Action.SetScatterPlotData(traces), state) =>
+        state.focus(_.scatterPlot.traces).replace(traces.some) -> F.unit
+      case (Action.SetCanvas(canvas), state) =>
+        state.copy(canvas = canvas.some) -> F.unit
     )
 
     _ <- store.state

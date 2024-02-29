@@ -25,7 +25,7 @@ trait Buttons[S, A]:
       cls0: String,
       isDisabled: S => Boolean = _ => false
   ): V =
-    import html._
+    import html.*
     useState: state =>
       button(
         cls := cls0,

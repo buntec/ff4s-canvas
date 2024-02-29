@@ -93,7 +93,7 @@ def loop[F[_]: Dom, D: Eq: Transition](
             val setup = (
               Draw.save,
               Draw.clear,
-              Draw.marginTransform.flatMap(_.applyToCtx),
+              Draw.marginTransform.flatMap(_.applyToCtx)
             ).tupled
 
             val cleanup = Draw.restore
@@ -110,7 +110,7 @@ def loop[F[_]: Dom, D: Eq: Transition](
                       data0
                     ) *> cleanup)
                       .foldMap(compiler)
-                    if (keepGoing) {
+                    if keepGoing then {
                       handle = Some(dom.window.requestAnimationFrame(draw _))
                     }
             )

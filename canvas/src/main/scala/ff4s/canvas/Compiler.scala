@@ -82,7 +82,7 @@ private[canvas] object Compiler:
       mousePos = mouse.getPos(ev, ctx)
       val p1 = marginTransform.inverse(dragStartPos)
       val p2 = marginTransform.inverse(mousePos)
-      if (mouseDown) {
+      if mouseDown then {
         val deltaX = p2.x - p1.x
         val deltaY = p2.y - p1.y
         transform =
@@ -105,14 +105,13 @@ private[canvas] object Compiler:
       "wheel",
       (ev: dom.Event) =>
         ev.preventDefault()
-        if (!mouseDown) {
+        if !mouseDown then {
           val wev = ev.asInstanceOf[dom.WheelEvent]
           val p = marginTransform.inverse(mouse.getPos(wev, ctx))
           val scroll = -1 * wev.deltaY * settings.zoomSensitivity
-          if (
-            scroll > 0 && transform.k < settings.maxZoom ||
+          if scroll > 0 && transform.k < settings.maxZoom ||
             scroll < 0 && transform.k > settings.minZoom
-          ) {
+          then {
             transform = transform
               .andThen(Transform.translate(-p.x, -p.y))
               .andThen(Transform.scale(math.exp(scroll)))

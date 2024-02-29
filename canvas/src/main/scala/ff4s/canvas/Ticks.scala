@@ -49,17 +49,17 @@ object Ticks:
     val power = math.floor(math.log10(step))
     val error = step / math.pow(10.0, power)
     val factor =
-      if (error >= e10) then 10.0
+      if error >= e10 then 10.0
       else if error >= e5 then 5.0
       else if error >= e2 then 2.0
       else 1.0
     val inc = math.pow(10.0, power) * factor
     var i1 = math.round(start / inc)
     var i2 = math.round(stop / inc)
-    if (i1 * inc < start) {
+    if i1 * inc < start then {
       i1 += 1
     }
-    if (i2 * inc > stop) {
+    if i2 * inc > stop then {
       i2 -= 1
     }
     (i1, i2, inc)
