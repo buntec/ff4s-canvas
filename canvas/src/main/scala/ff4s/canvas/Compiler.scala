@@ -85,8 +85,9 @@ private[canvas] object Compiler:
       if mouseDown then {
         val deltaX = p2.x - p1.x
         val deltaY = p2.y - p1.y
-        transform =
+        transform = settings.modifyTransform(
           transformOnDragStart andThen Transform.translate(deltaX, deltaY)
+        )
       }
 
     canvas.addEventListener(
@@ -112,10 +113,12 @@ private[canvas] object Compiler:
           if scroll > 0 && transform.k < settings.maxZoom ||
             scroll < 0 && transform.k > settings.minZoom
           then {
-            transform = transform
-              .andThen(Transform.translate(-p.x, -p.y))
-              .andThen(Transform.scale(math.exp(scroll)))
-              .andThen(Transform.translate(p.x, p.y))
+            transform = settings.modifyTransform(
+              transform
+                .andThen(Transform.translate(-p.x, -p.y))
+                .andThen(Transform.scale(math.exp(scroll)))
+                .andThen(Transform.translate(p.x, p.y))
+            )
           }
         }
     )

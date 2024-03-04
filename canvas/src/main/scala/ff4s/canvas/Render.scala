@@ -39,7 +39,8 @@ case class Settings(
     zoomSensitivity: Double = 0.001,
     margins: Margins,
     transitionDuration: FiniteDuration = 500.millis,
-    transitionEasing: Easing = Easing.CubicInOut
+    transitionEasing: Easing = Easing.CubicInOut,
+    modifyTransform: Transform => Transform = identity
 )
 
 def loop[F[_]: Dom, D: Eq: Transition](
