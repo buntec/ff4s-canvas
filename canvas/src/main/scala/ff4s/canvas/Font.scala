@@ -24,6 +24,7 @@ final case class Font(
     style: Option[FontStyle],
     variant: Option[FontVariant],
     weight: Option[FontWeight],
+    width: Option[FontWidth],
     size: FontSize,
     lineHeight: Option[LineHeight],
     families: NonEmptyList[FontFamily]
@@ -39,16 +40,17 @@ final case class Font(
 object Font:
 
   def apply(size: FontSize, family: FontFamily): Font =
-    Font(None, None, None, size, None, NonEmptyList.one(family))
+    Font(None, None, None, None, size, None, NonEmptyList.one(family))
 
   def apply(size: FontSize, family: FontFamily, fallBack: FontFamily): Font =
-    Font(None, None, None, size, None, NonEmptyList.of(family, fallBack))
+    Font(None, None, None, None, size, None, NonEmptyList.of(family, fallBack))
 
   given Show[Font] = Show.show(f =>
     List(
       f.style.map(_.show),
       f.variant.map(_.show),
       f.weight.map(_.show),
+      f.width.map(_.show),
       f.size.show.some,
       f.lineHeight.map(_.show),
       f.families.map(_.show).toList.mkString(", ").some
@@ -126,6 +128,24 @@ object LineHeight:
   given Show[LineHeight] = Show.show(_ match
     case Normal      => "/normal"
     case Unitless(n) => show"/$n"
+  )
+
+enum FontWidth:
+  case Normal, UltraCondensed, ExtraCondensed, Condensed, SemiCondensed,
+    SemiExpanded, Expanded, ExtraExpanded, UltraExpanded
+
+object FontWidth:
+
+  given Show[FontWidth] = Show.show(_ match
+    case Normal         => "normal"
+    case UltraCondensed => "ultra-condensed"
+    case ExtraCondensed => "extra-condensed"
+    case Condensed      => "condensed"
+    case SemiCondensed  => "semi-condensed"
+    case SemiExpanded   => "semi-expanded"
+    case Expanded       => "expanded"
+    case ExtraExpanded  => "extra-expanded"
+    case UltraExpanded  => "ultra-expanded"
   )
 
 enum FontFamily:
