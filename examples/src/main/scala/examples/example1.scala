@@ -20,6 +20,7 @@ package example1
 import cats.effect.Async
 import cats.effect.implicits.*
 import cats.effect.std.Dispatcher
+import cats.effect.std.Queue
 import cats.kernel.Eq
 import cats.syntax.all.*
 import ff4s.canvas.*
@@ -56,7 +57,7 @@ object scatter:
         Marker.Square(markerSize, color, fill),
         Marker.Cross(markerSize, color)
       )
-    yield ScatterPlot.Trace(points, marker, label.some)
+    yield ScatterPlot.Trace(points, marker, label)
 
   case class State(
       traces: Option[List[ScatterPlot.Trace]] = None,
@@ -132,6 +133,28 @@ class App[F[_]: Dom](using F: Async[F])
         state.copy(canvas = canvas.some) -> F.unit
     )
 
+    scatterPlotEventQ <- Queue.synchronous[F, ScatterPlot.Event].toResource
+
+    _ <- fs2.Stream
+      .fromQueueUnterminated(scatterPlotEventQ)
+      .evalMap:
+        case ScatterPlot.Event.PointUpdate(label, original, point) =>
+          store.state.get.flatMap: state =>
+            state.scatterPlot.traces.foldMapM: data =>
+              data
+                .find(_.label == label)
+                .map: trace =>
+                  trace.copy(points =
+                    trace.points.filter(_ != original) :+ point
+                  )
+                .foldMapM: newTrace =>
+                  val dataNew =
+                    data.filter(_.label != newTrace.label) :+ newTrace
+                  store.dispatch(Action.SetScatterPlotData(dataNew))
+      .compile
+      .drain
+      .background
+
     _ <- store.state
       .map(_.canvas)
       .discrete
@@ -144,7 +167,8 @@ class App[F[_]: Dom](using F: Async[F])
               scatter.config,
               store.state.map(_.scatterPlot.traces.getOrElse(Nil)),
               canvas,
-              dispatcher
+              dispatcher,
+              scatterPlotEventQ
             )
           )
           .evalMap(_ => F.never)

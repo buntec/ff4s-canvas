@@ -28,6 +28,8 @@ import fs2.dom.Dom
 import fs2.dom.HtmlCanvasElement
 
 import scalajs.js
+import cats.effect.std.Queue
+import cats.effect.std.QueueSink
 
 object ScatterPlot:
 
@@ -44,7 +46,7 @@ object ScatterPlot:
   final case class Trace(
       points: List[Point],
       marker: Marker,
-      label: Option[String]
+      label: String
   )
 
   object Trace:
@@ -57,11 +59,15 @@ object ScatterPlot:
       )
     )
 
+  enum Event:
+    case PointUpdate(label: String, original: Point, p: Point)
+
   def apply[F[_]: Dom](
       config: Config,
       traces: Signal[F, List[Trace]],
       elm: HtmlCanvasElement[F],
-      dispatcher: Dispatcher[F]
+      dispatcher: Dispatcher[F],
+      eventQ: QueueSink[F, Event]
   )(using F: Async[F]): Resource[F, Unit] =
 
     def tooltip(hover: Point): Draw[Unit] =
@@ -96,7 +102,7 @@ object ScatterPlot:
         n = traces.length
         maxMarkerSize = traces.map(_.marker.toSize).max
         maxTextWidth <- traces
-          .map(_.label.getOrElse("?"))
+          .map(_.label)
           .traverse(s => measureText(s))
           .map(_.map(_.width).max)
 
@@ -116,7 +122,7 @@ object ScatterPlot:
         _ <- setFillStyle(config.textColor)
         _ <- traces.zipWithIndex.traverse: (trace, i) =>
           val y = (i + 1) * dy
-          val text = trace.label.getOrElse("?")
+          val text = trace.label
           for
             metric <- measureText(text)
             bbt = metric
