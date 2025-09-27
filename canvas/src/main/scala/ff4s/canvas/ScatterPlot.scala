@@ -62,7 +62,7 @@ object ScatterPlot:
       traces: Signal[F, List[Trace]],
       elm: HtmlCanvasElement[F],
       dispatcher: Dispatcher[F]
-  )(using F: Async[F]): Resource[F, Unit] =
+  )(using F: Async[F]): Resource[F, Signal[F, Option[Unit]]] =
 
     def tooltip(hover: Point): Draw[Unit] =
       import Draw.*

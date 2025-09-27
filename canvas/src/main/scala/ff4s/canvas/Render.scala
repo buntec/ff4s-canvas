@@ -40,20 +40,23 @@ case class Settings(
     margins: Margins,
     transitionDuration: FiniteDuration = 500.millis,
     transitionEasing: Easing = Easing.CubicInOut,
-    modifyTransform: Transform => Transform = identity
+    modifyTransform: Transform => Transform = identity,
+    disableDrag: Boolean = false
 )
 
-def loop[F[_]: Dom, D: Eq: Transition](
+def loop[F[_]: Dom, D: Eq: Transition, R](
     canvas: HtmlCanvasElement[F],
     dispatcher: Dispatcher[F],
     data: Signal[F, D],
-    drawFrame: (DOMHighResTimeStamp, D) => Draw[Unit],
+    drawFrame: (DOMHighResTimeStamp, D) => Draw[R],
     config: Settings
-)(using F: Async[F]): Resource[F, Unit] = for
+)(using F: Async[F]): Resource[F, Signal[F, Option[R]]] = for
 
   sizeRef <- (canvas.offsetWidth, canvas.offsetHeight)
     .flatMapN((w, h) => SignallingRef.of[F, (Double, Double)]((w, h)))
     .toResource
+
+  drawResultS <- SignallingRef.of[F, Option[R]](None).toResource
 
   _ <- ResizeObserver[F]((a, _) =>
     // `head` calls are safe b/c the observed element is a <canvas>
@@ -106,14 +109,15 @@ def loop[F[_]: Dom, D: Eq: Transition](
                   val u = config.transitionEasing(u0)
                   val data0 = Transition[D](dataPrev, data, u)
                   F.delay:
-                    (setup *> drawFrame(
+                    val drawResult = (setup *> drawFrame(
                       DOMHighResTimeStamp(t),
                       data0
-                    ) *> cleanup)
-                      .foldMap(compiler)
-                    if keepGoing then {
+                    ) <* cleanup).foldMap(compiler)
+                    if keepGoing then
                       handle = Some(dom.window.requestAnimationFrame(draw _))
-                    }
+                    drawResult
+                  .flatMap: r =>
+                      drawResultS.set(Some(r))
             )
 
           draw(0)
@@ -126,4 +130,4 @@ def loop[F[_]: Dom, D: Eq: Transition](
     .compile
     .drain
     .background
-yield ()
+yield drawResultS
