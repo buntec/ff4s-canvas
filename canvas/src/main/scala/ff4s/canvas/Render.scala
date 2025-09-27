@@ -40,8 +40,7 @@ case class Settings(
     margins: Margins,
     transitionDuration: FiniteDuration = 500.millis,
     transitionEasing: Easing = Easing.CubicInOut,
-    modifyTransform: Transform => Transform = identity,
-    disableDrag: Boolean = true
+    modifyTransform: Transform => Transform = identity
 )
 
 def loop[F[_]: Dom, D: Eq: Transition](
