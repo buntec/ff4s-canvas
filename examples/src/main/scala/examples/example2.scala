@@ -190,27 +190,27 @@ class App[F[_]: Dom](using F: Async[F])
                     drawRes.get.flatMap:
                       _.foldMapM:
                         case DrawResult(
-                              mt,
+                              transform,
                               mouseCalc,
                               xScale,
                               yScale,
                               hovered
                             ) =>
                           val mp0 = mouseCalc(md)
-                          val mp = mt.invert(mp0)
+                          val mp = transform.invert(mp0)
                           val x = xScale.inverse(mp.x)
                           val y = yScale.inverse(mp.y)
                           val mouse = Point(x, y)
                           store.state.get
                             .map(_.volskewPlot.trace)
-                            .flatMap: trace =>
-                              trace.foldMapM: points =>
-                                points.points
+                            .flatMap:
+                              _.foldMapM:
+                                _.points
                                   .minByOption(_.distance2To(mouse))
-                                  .foldMapM: p =>
-                                    hovered.foldMapM: hp =>
-                                      F.whenA(p == hp):
-                                        draggedPoint.set(Some(hp))
+                                  .foldMapM: found =>
+                                    hovered.foldMapM: hover =>
+                                      F.whenA(found == hover):
+                                        draggedPoint.set(Some(hover))
               )
         .compile
         .drain
@@ -240,21 +240,19 @@ class App[F[_]: Dom](using F: Async[F])
                               hovered
                             ) =>
                           val mp0 = mouseCalc(md)
-                          val mp = mt.invert(mp0)
-                          val x = xScale.inverse(mp.x)
-                          val y = yScale.inverse(mp.y)
-                          val mouse = Point(x, y)
+                          val mpy = mt.invertY(mp0.y)
+                          val y = yScale.inverse(mpy)
                           draggedPoint.get.flatMap:
-                            _.foldMapM: dp =>
+                            _.foldMapM: dragged =>
                               store.state.get
                                 .map(_.volskewPlot.trace)
                                 .flatMap:
-                                  _.foldMapM: trace =>
-                                    trace.points
-                                      .find(_.x == dp.x)
+                                  _.foldMapM:
+                                    _.points
+                                      .find(_.x == dragged.x)
                                       .foldMapM: found =>
                                         store.dispatch:
-                                          Action.UpdatePoint(found, mouse.y)
+                                          Action.UpdatePoint(found, y)
               )
         .compile
         .drain
@@ -276,9 +274,8 @@ class App[F[_]: Dom](using F: Async[F])
             )
           )
           .evalMap:
-            _.discrete.unNone
-              .evalMap: drawR =>
-                drawRes.set(Some(drawR))
+            _.discrete
+              .evalMap(drawRes.set)
               .compile
               .drain
       )

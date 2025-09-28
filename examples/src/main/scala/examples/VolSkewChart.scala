@@ -54,7 +54,7 @@ object VolSkewChart:
     )
 
   final case class DrawResult(
-      mt: Transform,
+      transform: Transform,
       mousePosCalc: MouseEvent => Point,
       xScale: Scale,
       yScale: Scale,
@@ -168,9 +168,11 @@ object VolSkewChart:
           _ <- restore
           hoveredPoint <- kvGet[Point]("hover")
           _ <- hoveredPoint.foldMapM(tooltip)
-          mt <- marginTransform
+          transform <- marginTransform
           mousePosCalc <- mousePosCalc
-        yield Some(DrawResult(mt, mousePosCalc, xScale, yScale, hoveredPoint))
+        yield Some(
+          DrawResult(transform, mousePosCalc, xScale, yScale, hoveredPoint)
+        )
       else Draw.pure(Option.empty[DrawResult])
 
     render.loop(
