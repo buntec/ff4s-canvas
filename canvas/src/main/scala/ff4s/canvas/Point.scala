@@ -16,13 +16,17 @@
 
 package ff4s.canvas
 
-final case class Point(x: Double, y: Double):
+import math.sqrt
+import math.pow
 
-  def distanceTo(other: Point) =
-    math.sqrt(math.pow(x - other.x, 2) + math.pow(y - other.y, 2))
+final case class Point(x: Double, y: Double)
 
 object Point:
 
   given Transition[Point] = Transition.transition((p1, p2, t) =>
     Point(t * p2.x + (1 - t) * p1.x, t * p2.y + (1 - t) * p1.y)
   )
+
+  extension (p: Point)
+    def distanceTo2(other: Point): Double =
+      math.sqrt(math.pow(p.x - other.x, 2) + math.pow(p.y - other.y, 2))

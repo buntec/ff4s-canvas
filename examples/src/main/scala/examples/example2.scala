@@ -22,18 +22,17 @@ import cats.effect.implicits.*
 import cats.effect.std.Dispatcher
 import cats.kernel.Eq
 import cats.syntax.all.*
+import examples.VolSkewChart.DrawResult
 import ff4s.canvas.*
 import fs2.Stream
-import math.abs
+import fs2.concurrent.SignallingRef
 import fs2.dom.Dom
 import monocle.syntax.all.*
 import org.http4s.Uri
 import org.scalajs.dom
-import fs2.concurrent.SignallingRef
-import examples.VolSkewChart.DrawResult
-
-import scala.concurrent.duration.*
 import org.scalajs.dom.MouseEvent
+
+import math.abs
 
 object volskew:
 
@@ -154,12 +153,13 @@ class App[F[_]: Dom](using F: Async[F])
 
     draggedPoint <- SignallingRef.of[F, Option[Point]](None).toResource
 
-    _ <- drawRes.discrete
-      .changes(Eq.fromUniversalEquals)
-      .debounce(0.01.second)
-      .unNone
-      .evalTap:
-        case DrawResult(mt, mouseCalc, xScale, yScale, hovered) =>
+    _ <-
+      store.state
+        .map(_.canvas)
+        .discrete
+        .unNone
+        .changes(Eq.fromUniversalEquals)
+        .evalMap: _ =>
           F.delay:
             dom.document
               .getElementById("volskew-plot")
@@ -169,35 +169,17 @@ class App[F[_]: Dom](using F: Async[F])
                   dispatcher.unsafeRunAndForget:
                     draggedPoint.set(None)
               )
-      .evalTap:
-        case DrawResult(mt, mouseCalc, xScale, yScale, hovered) =>
-          F.delay:
-            dom.document
-              .getElementById("volskew-plot")
-              .addEventListener[dom.MouseEvent](
-                "mousemove",
-                md =>
-                  dispatcher.unsafeRunAndForget:
-                    val mp0 = mouseCalc(md)
-                    val mp = mt.invert(mp0)
-                    val x = xScale.inverse(mp.x)
-                    val y = yScale.inverse(mp.y)
-                    val mouse = Point(x, y)
-                    draggedPoint.get.flatMap:
-                      _.foldMapM: dp =>
-                        store.state.get
-                          .map(_.volskewPlot.trace)
-                          .flatMap:
-                            _.foldMapM: trace =>
-                              trace.points
-                                .find(_.x == dp.x)
-                                .foldMapM: found =>
-                                  store.dispatch(
-                                    Action.UpdatePoint(found, mouse.y)
-                                  )
-              )
-      .evalTap:
-        case DrawResult(mt, mouseCalc, xScale, yScale, hovered) =>
+        .compile
+        .drain
+        .background
+
+    _ <-
+      store.state
+        .map(_.canvas)
+        .discrete
+        .unNone
+        .changes(Eq.fromUniversalEquals)
+        .evalMap: _ =>
           F.delay:
             dom.document
               .getElementById("volskew-plot")
@@ -205,24 +187,78 @@ class App[F[_]: Dom](using F: Async[F])
                 "mousedown",
                 md =>
                   dispatcher.unsafeRunAndForget:
-                    val mp0 = mouseCalc(md)
-                    val mp = mt.invert(mp0)
-                    val x = xScale.inverse(mp.x)
-                    val y = yScale.inverse(mp.y)
-                    val mouse = Point(x, y)
-                    store.state.get
-                      .map(_.volskewPlot.trace)
-                      .flatMap: trace =>
-                        trace.foldMapM: points =>
-                          points.points
-                            .minByOption(_.distanceTo(mouse))
-                            .foldMapM: p =>
-                              hovered.foldMapM: hp =>
-                                F.whenA(p == hp)(draggedPoint.set(Some(hp)))
+                    drawRes.get.flatMap:
+                      _.foldMapM:
+                        case DrawResult(
+                              mt,
+                              mouseCalc,
+                              xScale,
+                              yScale,
+                              hovered
+                            ) =>
+                          val mp0 = mouseCalc(md)
+                          val mp = mt.invert(mp0)
+                          val x = xScale.inverse(mp.x)
+                          val y = yScale.inverse(mp.y)
+                          val mouse = Point(x, y)
+                          store.state.get
+                            .map(_.volskewPlot.trace)
+                            .flatMap: trace =>
+                              trace.foldMapM: points =>
+                                points.points
+                                  .minByOption(_.distanceTo2(mouse))
+                                  .foldMapM: p =>
+                                    hovered.foldMapM: hp =>
+                                      F.whenA(p == hp):
+                                        draggedPoint.set(Some(hp))
               )
-      .compile
-      .drain
-      .background
+        .compile
+        .drain
+        .background
+
+    _ <-
+      store.state
+        .map(_.canvas)
+        .discrete
+        .unNone
+        .changes(Eq.fromUniversalEquals)
+        .evalMap: _ =>
+          F.delay:
+            dom.document
+              .getElementById("volskew-plot")
+              .addEventListener[dom.MouseEvent](
+                "mousemove",
+                md =>
+                  dispatcher.unsafeRunAndForget:
+                    drawRes.get.flatMap:
+                      _.foldMapM:
+                        case DrawResult(
+                              mt,
+                              mouseCalc,
+                              xScale,
+                              yScale,
+                              hovered
+                            ) =>
+                          val mp0 = mouseCalc(md)
+                          val mp = mt.invert(mp0)
+                          val x = xScale.inverse(mp.x)
+                          val y = yScale.inverse(mp.y)
+                          val mouse = Point(x, y)
+                          draggedPoint.get.flatMap:
+                            _.foldMapM: dp =>
+                              store.state.get
+                                .map(_.volskewPlot.trace)
+                                .flatMap:
+                                  _.foldMapM: trace =>
+                                    trace.points
+                                      .find(_.x == dp.x)
+                                      .foldMapM: found =>
+                                        store.dispatch:
+                                          Action.UpdatePoint(found, mouse.y)
+              )
+        .compile
+        .drain
+        .background
 
     _ <- store.state
       .map(_.canvas)
