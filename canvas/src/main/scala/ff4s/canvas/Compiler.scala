@@ -80,15 +80,16 @@ private[canvas] object Compiler:
 
     def onMouseMove(ev: dom.MouseEvent) =
       mousePos = mouse.getPos(ev, ctx)
-      val p1 = marginTransform.inverse(dragStartPos)
-      val p2 = marginTransform.inverse(mousePos)
-      if mouseDown then {
-        val deltaX = p2.x - p1.x
-        val deltaY = p2.y - p1.y
-        transform = settings.modifyTransform(
-          transformOnDragStart andThen Transform.translate(deltaX, deltaY)
-        )
-      }
+      if !settings.disableDrag then
+        val p1 = marginTransform.inverse(dragStartPos)
+        val p2 = marginTransform.inverse(mousePos)
+        if mouseDown then {
+          val deltaX = p2.x - p1.x
+          val deltaY = p2.y - p1.y
+          transform = settings.modifyTransform(
+            transformOnDragStart andThen Transform.translate(deltaX, deltaY)
+          )
+        }
 
     canvas.addEventListener(
       "mousedown",
@@ -257,3 +258,6 @@ private[canvas] object Compiler:
           case Translate(x, y) => ctx.translate(x, y)
 
           case Scale(x, y) => ctx.scale(x, y)
+
+          case MousePosCalc() =>
+            (ev: dom.MouseEvent) => mouse.getPos(ev, ctx)

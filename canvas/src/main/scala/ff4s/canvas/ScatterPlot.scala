@@ -141,85 +141,89 @@ object ScatterPlot:
     val drawFrame = (t: DOMHighResTimeStamp, traces: List[Trace]) =>
       import Draw.*
       val nPoints = traces.map(_.points.length).sum
-      Monad[Draw].whenA(nPoints > 0):
-        val xMin = traces.flatMap(_.points.map(_.x)).min
-        val xMax = traces.flatMap(_.points.map(_.x)).max
-        val yMin = traces.flatMap(_.points.map(_.y)).min
-        val yMax = traces.flatMap(_.points.map(_.y)).max
-        for
-          _ <- save
-          w <- width
-          h <- height
-          xScale0 = Scale
-            .linear(
-              Scale.Domain(xMin, xMax),
-              Scale.Range(0, w)
-            )
-            .getOrElse(throw new Exception("failed to build x-scale"))
-          yScale0 = Scale
-            .linear(
-              Scale.Domain(yMin, yMax),
-              Scale.Range(h, 0)
-            )
-            .getOrElse(throw new Exception("failed to build y-scale"))
-          trans <- transform
-          xScale = trans
-            .rescaleX(xScale0)
-            .getOrElse(throw new Exception("failed to rescale x-scale"))
-          yScale = trans
-            .rescaleY(yScale0)
-            .getOrElse(throw new Exception("failed to rescale y-scale"))
-          xTickSize = 0.01 * h
-          yTickSize = 0.01 * w
-          _ <- Axes(
-            w,
-            h,
-            xTickSize,
-            yTickSize,
-            xScale,
-            yScale,
-            config.nXTicks,
-            config.nYTicks,
-            config.tickFont,
-            config.axisColor,
-            config.textColor,
-            config.gridColor
-          ).draw(Point(0, 0))
+      Monad[Draw].ifM(Draw.pure(nPoints > 0))(
+        {
+          val xMin = traces.flatMap(_.points.map(_.x)).min
+          val xMax = traces.flatMap(_.points.map(_.x)).max
+          val yMin = traces.flatMap(_.points.map(_.y)).min
+          val yMax = traces.flatMap(_.points.map(_.y)).max
+          for
+            _ <- save
+            w <- width
+            h <- height
+            xScale0 = Scale
+              .linear(
+                Scale.Domain(xMin, xMax),
+                Scale.Range(0, w)
+              )
+              .getOrElse(throw new Exception("failed to build x-scale"))
+            yScale0 = Scale
+              .linear(
+                Scale.Domain(yMin, yMax),
+                Scale.Range(h, 0)
+              )
+              .getOrElse(throw new Exception("failed to build y-scale"))
+            trans <- transform
+            xScale = trans
+              .rescaleX(xScale0)
+              .getOrElse(throw new Exception("failed to rescale x-scale"))
+            yScale = trans
+              .rescaleY(yScale0)
+              .getOrElse(throw new Exception("failed to rescale y-scale"))
+            xTickSize = 0.01 * h
+            yTickSize = 0.01 * w
+            _ <- Axes(
+              w,
+              h,
+              xTickSize,
+              yTickSize,
+              xScale,
+              yScale,
+              config.nXTicks,
+              config.nYTicks,
+              config.tickFont,
+              config.axisColor,
+              config.textColor,
+              config.gridColor
+            ).draw(Point(0, 0))
 
-          // clip everything outside axes region
-          _ <- beginPath
-          _ <- rect(yTickSize, 0, w - yTickSize, h - xTickSize)
-          _ <- clip
+            // clip everything outside axes region
+            _ <- beginPath
+            _ <- rect(yTickSize, 0, w - yTickSize, h - xTickSize)
+            _ <- clip
 
-          mp <- mousePos
-          _ <- kvDelete("hover") // reset hover info
-          _ <- traces.traverse_ : trace =>
-            trace.points.traverse_ : point =>
-              val at = Point(xScale(point.x), yScale(point.y))
-              val boundingPath = trace.marker.boundingPath(at)
-              isPointInPath(
-                boundingPath,
-                mp.x,
-                mp.y,
-                FillRule.Nonzero
-              ).flatMap: isHover =>
-                if isHover then
-                  val c0 = trace.marker.toColor
-                  val marker = trace.marker.withColor(c0.lighten(20))
-                  for
-                    _ <- kvPut("hover", point)
-                    _ <- save
-                    _ <- setShadowColor(c0)
-                    _ <- setShadowBlur(trace.marker.toSize / 2)
-                    _ <- marker.draw(at)
-                    _ <- restore
-                  yield ()
-                else trace.marker.draw(at)
+            mp <- mousePos
+            _ <- kvDelete("hover") // reset hover info
+            _ <- traces.traverse_ : trace =>
+              trace.points.traverse_ : point =>
+                val at = Point(xScale(point.x), yScale(point.y))
+                val boundingPath = trace.marker.boundingPath(at)
+                isPointInPath(
+                  boundingPath,
+                  mp.x,
+                  mp.y,
+                  FillRule.Nonzero
+                ).flatMap: isHover =>
+                  if isHover then
+                    val c0 = trace.marker.toColor
+                    val marker = trace.marker.withColor(c0.lighten(20))
+                    for
+                      _ <- kvPut("hover", point)
+                      _ <- save
+                      _ <- setShadowColor(c0)
+                      _ <- setShadowBlur(trace.marker.toSize / 2)
+                      _ <- marker.draw(at)
+                      _ <- restore
+                    yield ()
+                  else trace.marker.draw(at)
 
-          _ <- restore
-          _ <- kvGet[Point]("hover").flatMap(_.foldMapM(tooltip))
-          _ <- Monad[Draw].whenA(config.legend)(legend(traces))
-        yield ()
+            _ <- restore
+            _ <- kvGet[Point]("hover").flatMap(_.foldMapM(tooltip))
+            _ <- Monad[Draw].whenA(config.legend)(legend(traces))
+          yield Some(())
+        },
+        Draw.pure(Option.empty[Unit])
+      )
 
     render.loop(
       elm,
