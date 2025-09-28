@@ -28,5 +28,5 @@ object Point:
   )
 
   extension (p: Point)
-    def distanceTo2(other: Point): Double =
+    def distance2To(other: Point): Double =
       math.sqrt(math.pow(p.x - other.x, 2) + math.pow(p.y - other.y, 2))

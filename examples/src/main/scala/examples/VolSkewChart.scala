@@ -21,11 +21,11 @@ import cats.effect.kernel.Resource
 import cats.effect.std.Dispatcher
 import cats.kernel.Eq
 import cats.syntax.all.*
+import ff4s.canvas.*
 import ff4s.canvas.syntax.*
 import fs2.concurrent.Signal
 import fs2.dom.Dom
 import fs2.dom.HtmlCanvasElement
-import ff4s.canvas.*
 import org.scalajs.dom.MouseEvent
 
 object VolSkewChart:

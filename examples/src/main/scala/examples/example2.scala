@@ -206,7 +206,7 @@ class App[F[_]: Dom](using F: Async[F])
                             .flatMap: trace =>
                               trace.foldMapM: points =>
                                 points.points
-                                  .minByOption(_.distanceTo2(mouse))
+                                  .minByOption(_.distance2To(mouse))
                                   .foldMapM: p =>
                                     hovered.foldMapM: hp =>
                                       F.whenA(p == hp):

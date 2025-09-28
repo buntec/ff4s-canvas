@@ -20,8 +20,8 @@ import cats.Monad
 import cats.free.Free
 import cats.free.Free.*
 import cats.syntax.all.*
-import org.scalajs.dom.TextMetrics
 import org.scalajs.dom.MouseEvent
+import org.scalajs.dom.TextMetrics
 
 sealed trait DrawA[A]
 
@@ -252,7 +252,7 @@ object Draw:
   def measureText(text: String): Draw[TextMetrics] =
     liftF[DrawA, TextMetrics](MeasureText(text))
 
-  val mousePosCalc: Draw[MouseEvent => Point] = 
+  val mousePosCalc: Draw[MouseEvent => Point] =
     liftF[DrawA, MouseEvent => Point](MousePosCalc())
 
   // custom

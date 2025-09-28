@@ -30,13 +30,6 @@ enum Marker:
   case Square(size: Double, color: Color, fill: Boolean)
   case Cross(size: Double, color: Color)
 
-  extension (m: Marker)
-    def size: Double = m match
-      case c: Marker.Circle   => c.size
-      case t: Marker.Triangle => t.size
-      case s: Marker.Square   => s.size
-      case x: Marker.Cross    => x.size
-
   def withSize(size: Double): Marker = this match
     case Circle(_, color, fill) => Circle(size, color, fill)
     case Triangle(_, color, fill, centered, isUp) =>
