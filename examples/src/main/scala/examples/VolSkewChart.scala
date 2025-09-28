@@ -57,7 +57,8 @@ object VolSkewChart:
       mt: Transform,
       mousePosCalc: MouseEvent => Point,
       xScale: Scale,
-      yScale: Scale
+      yScale: Scale,
+      hoveredPoint: Option[Point]
   )
 
   def apply[F[_]: Dom](
@@ -165,10 +166,11 @@ object VolSkewChart:
                 else trace.marker.draw(at)
 
           _ <- restore
-          _ <- kvGet[Point]("hover").flatMap(_.foldMapM(tooltip))
+          hoveredPoint <- kvGet[Point]("hover")
+          _ <- hoveredPoint.foldMapM(tooltip)
           mt <- marginTransform
           mousePosCalc <- mousePosCalc
-        yield Some(DrawResult(mt, mousePosCalc, xScale, yScale))
+        yield Some(DrawResult(mt, mousePosCalc, xScale, yScale, hoveredPoint))
       else Draw.pure(Option.empty[DrawResult])
 
     render.loop(

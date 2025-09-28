@@ -16,7 +16,10 @@
 
 package ff4s.canvas
 
-final case class Point(x: Double, y: Double)
+final case class Point(x: Double, y: Double):
+
+  def distanceTo(other: Point) =
+    math.sqrt(math.pow(x - other.x, 2) + math.pow(y - other.y, 2))
 
 object Point:
 

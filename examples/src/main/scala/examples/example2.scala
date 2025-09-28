@@ -151,22 +151,13 @@ class App[F[_]: Dom](using F: Async[F])
 
     draggedPoint <- SignallingRef.of[F, Option[Point]](None).toResource
 
-    _ <- draggedPoint.discrete
-      .changes(Eq.fromUniversalEquals)
-      .evalMap: dp =>
-        F.delay(println(dp))
-      .compile
-      .drain
-      .background
-
-    // TODO why can't I register events on "fs2" canvas ?
     _ <- store.state
       .map(_.canvas)
       .discrete
       .unNone
       .flatMap(_ => drawRes.discrete.unNone)
       .evalTap:
-        case DrawResult(mt, mouseCalc, xScale, yScale) =>
+        case DrawResult(mt, mouseCalc, xScale, yScale, hovered) =>
           F.delay:
             dom.document
               .getElementById("volskew-plot")
@@ -174,11 +165,10 @@ class App[F[_]: Dom](using F: Async[F])
                 "mouseup",
                 md =>
                   dispatcher.unsafeRunAndForget:
-                    F.delay:
-                      draggedPoint.set(None)
+                    draggedPoint.set(None)
               )
       .evalTap:
-        case DrawResult(mt, mouseCalc, xScale, yScale) =>
+        case DrawResult(mt, mouseCalc, xScale, yScale, hovered) =>
           F.delay:
             dom.document
               .getElementById("volskew-plot")
@@ -186,7 +176,6 @@ class App[F[_]: Dom](using F: Async[F])
                 "mousemove",
                 md =>
                   dispatcher.unsafeRunAndForget:
-                    // TODO: abstract this logic in dsl ?
                     val mp0 = mouseCalc(md)
                     val mp = mt.invert(mp0)
                     val x = xScale.inverse(mp.x)
@@ -206,7 +195,7 @@ class App[F[_]: Dom](using F: Async[F])
                                   )
               )
       .evalTap:
-        case DrawResult(mt, mouseCalc, xScale, yScale) =>
+        case DrawResult(mt, mouseCalc, xScale, yScale, hovered) =>
           F.delay:
             dom.document
               .getElementById("volskew-plot")
@@ -214,26 +203,20 @@ class App[F[_]: Dom](using F: Async[F])
                 "mousedown",
                 md =>
                   dispatcher.unsafeRunAndForget:
-                    draggedPoint.get.flatMap:
-                      case Some(dp) => draggedPoint.set(None)
-                      case _ =>
-                        store.state
-                          .map(_.volskewPlot.trace)
-                          .get
-                          .flatMap:
-                            _.foldMapM: trace =>
-                              // TODO: abstract this logic in dsl ?
-                              val mp0 = mouseCalc(md)
-                              val mp = mt.invert(mp0)
-                              val x = xScale.inverse(mp.x)
-                              val y = yScale.inverse(mp.y)
-                              val mouse = Point(x, y)
-                              trace.points
-                                .find: p =>
-                                  abs(p.x - mouse.x) + abs(p.y - mouse.y) <= 1
-                                .foldMapM: found =>
-                                  F.delay(println(s"$found")) *> draggedPoint
-                                    .set(Some(found))
+                    val mp0 = mouseCalc(md)
+                    val mp = mt.invert(mp0)
+                    val x = xScale.inverse(mp.x)
+                    val y = yScale.inverse(mp.y)
+                    val mouse = Point(x, y)
+                    store.state.get
+                      .map(_.volskewPlot.trace)
+                      .flatMap: trace =>
+                        trace.foldMapM: points =>
+                          points.points
+                            .minByOption(_.distanceTo(mouse))
+                            .foldMapM: p =>
+                              hovered.foldMapM: hp =>
+                                F.whenA(p == hp)(draggedPoint.set(Some(hp)))
               )
       .compile
       .drain
@@ -254,11 +237,12 @@ class App[F[_]: Dom](using F: Async[F])
               dispatcher
             )
           )
-          .flatMap: sig =>
-            sig.discrete.unNone
+          .evalMap:
+            _.discrete.unNone
               .evalMap: drawR =>
-                F.delay(println(drawR)) *> drawRes.set(Some(drawR))
-          .evalMap(_ => F.never)
+                drawRes.set(Some(drawR))
+              .compile
+              .drain
       )
       .compile
       .drain
