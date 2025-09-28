@@ -32,6 +32,9 @@ import org.scalajs.dom
 import fs2.concurrent.SignallingRef
 import examples.VolSkewChart.DrawResult
 
+import scala.concurrent.duration.*
+import org.scalajs.dom.MouseEvent
+
 object volskew:
 
   val config = VolSkewChart.Config(
@@ -151,11 +154,10 @@ class App[F[_]: Dom](using F: Async[F])
 
     draggedPoint <- SignallingRef.of[F, Option[Point]](None).toResource
 
-    _ <- store.state
-      .map(_.canvas)
-      .discrete
+    _ <- drawRes.discrete
+      .changes(Eq.fromUniversalEquals)
+      .debounce(0.01.second)
       .unNone
-      .flatMap(_ => drawRes.discrete.unNone)
       .evalTap:
         case DrawResult(mt, mouseCalc, xScale, yScale, hovered) =>
           F.delay:
