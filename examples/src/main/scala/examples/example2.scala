@@ -177,7 +177,7 @@ object Chart:
       drawFrame,
       render.Settings(
         margins = Margins.uniformRelative(0.05),
-        disableDrag = true
+        withDrag = false
       )
     )
 
