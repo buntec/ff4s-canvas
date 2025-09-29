@@ -80,7 +80,7 @@ private[canvas] object Compiler:
 
     def onMouseMove(ev: dom.MouseEvent) =
       mousePos = mouse.getPos(ev, ctx)
-      if !settings.disableDrag then
+      if !settings.withDrag then
         val p1 = marginTransform.inverse(dragStartPos)
         val p2 = marginTransform.inverse(mousePos)
         if mouseDown then {
