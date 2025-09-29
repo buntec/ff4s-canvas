@@ -219,7 +219,7 @@ object ScatterPlot:
           _ <- restore
           _ <- kvGet[Point]("hover").flatMap(_.foldMapM(tooltip))
           _ <- Monad[Draw].whenA(config.legend)(legend(traces))
-        yield Some(())
+        yield ()
       .map(Option(_))
 
     render.loop(

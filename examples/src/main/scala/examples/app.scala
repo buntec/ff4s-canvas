@@ -18,5 +18,5 @@ package examples
 
 object Main
     extends ff4s.IOEntryPoint(
-      new example2.App
+      new example1.App
     )
