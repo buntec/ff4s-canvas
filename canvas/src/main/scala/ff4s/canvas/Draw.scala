@@ -20,7 +20,6 @@ import cats.Monad
 import cats.free.Free
 import cats.free.Free.*
 import cats.syntax.all.*
-import org.scalajs.dom.MouseEvent
 import org.scalajs.dom.TextMetrics
 
 sealed trait DrawA[A]
@@ -100,7 +99,6 @@ object DrawA:
   ) extends DrawA[Unit]
   case class Translate(x: Double, y: Double) extends DrawA[Unit]
   case class Scale(x: Double, y: Double) extends DrawA[Unit]
-  case class MousePosCalc() extends DrawA[MouseEvent => Point]
 
   // custom
   case class GetMousePos() extends DrawA[Point]
@@ -251,9 +249,6 @@ object Draw:
 
   def measureText(text: String): Draw[TextMetrics] =
     liftF[DrawA, TextMetrics](MeasureText(text))
-
-  val mousePosCalc: Draw[MouseEvent => Point] =
-    liftF[DrawA, MouseEvent => Point](MousePosCalc())
 
   // custom
 

@@ -16,7 +16,6 @@
 
 package ff4s.canvas
 
-import math.sqrt
 import math.pow
 
 final case class Point(x: Double, y: Double)
@@ -29,4 +28,4 @@ object Point:
 
   extension (p: Point)
     def distance2To(other: Point): Double =
-      math.sqrt(math.pow(p.x - other.x, 2) + math.pow(p.y - other.y, 2))
+      pow(p.x - other.x, 2) + pow(p.y - other.y, 2)

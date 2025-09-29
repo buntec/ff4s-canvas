@@ -258,6 +258,3 @@ private[canvas] object Compiler:
           case Translate(x, y) => ctx.translate(x, y)
 
           case Scale(x, y) => ctx.scale(x, y)
-
-          case MousePosCalc() =>
-            (ev: dom.MouseEvent) => mouse.getPos(ev, ctx)

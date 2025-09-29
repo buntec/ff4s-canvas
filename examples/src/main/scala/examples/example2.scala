@@ -17,7 +17,6 @@
 package examples
 package example2
 
-import cats.effect.Async
 import cats.effect.implicits.*
 import cats.effect.kernel.Async
 import cats.effect.kernel.Resource
@@ -59,13 +58,7 @@ object Chart:
       )
     )
 
-  final case class DrawResult(
-      transform: Transform,
-      mousePosCalc: MouseEvent => Point,
-      xScale: Scale,
-      yScale: Scale,
-      hoveredPoint: Option[Point]
-  )
+  final case class DrawResult(mouse: Point, hovered: Option[Point])
 
   def apply[F[_]: Dom](
       config: Config,
@@ -147,7 +140,7 @@ object Chart:
           _ <- clip
 
           mp <- mousePos
-          _ <- kvDelete("hover") 
+          _ <- kvDelete("hover")
           _ <-
             trace.points.traverse_ : point =>
               val at = Point(xScale(point.x), yScale(point.y))
@@ -172,13 +165,11 @@ object Chart:
                 else trace.marker.draw(at)
 
           _ <- restore
-          hoveredPoint <- kvGet[Point]("hover")
-          _ <- hoveredPoint.foldMapM(tooltip)
-          transform <- marginTransform
-          mousePosCalc <- mousePosCalc
-        yield Some(
-          DrawResult(transform, mousePosCalc, xScale, yScale, hoveredPoint)
-        )
+          hovered <- kvGet[Point]("hover").flatTap(_.foldMapM(tooltip))
+          mouse <- (mousePos, marginTransform).tupled.map: (mp, mt) =>
+            val mt0 = mt.invert(mp)
+            Point(xScale.inverse(mt0.x), yScale.inverse(mt0.y))
+        yield Some(DrawResult(mouse, hovered))
       else Draw.pure(Option.empty[DrawResult])
 
     render.loop(
@@ -260,7 +251,7 @@ trait View[F[_]] extends Buttons[State[F], Action[F]]:
       h1(cls := "m-4 text-3xl", "ff4s-canvas"),
       div(
         cls := "m-2 flex flex-col items-center gap-2",
-        h2(cls := "text-2xl", "Chart"),
+        h2(cls := "text-2xl", "Chart (Drag a point 🚀)"),
         canvasTag(
           cls := "border rounded border-gray-500 sm:w-[500px] sm:h-[400px] md:w-[600px] md:h-[500px] lg:w-[800px] lg:h-[600px] w-[300px] h-[300px]",
           idAttr := "chart-id",
@@ -343,7 +334,7 @@ class App[F[_]: Dom](using F: Async[F])
                   dispatcher.unsafeRunAndForget:
                     drawRes.get.flatMap:
                       _.foldMapM: draw =>
-                        draggedPoint.set(draw.hoveredPoint)
+                        draggedPoint.set(draw.hovered)
               )
         .compile
         .drain
@@ -364,28 +355,18 @@ class App[F[_]: Dom](using F: Async[F])
                 md =>
                   dispatcher.unsafeRunAndForget:
                     drawRes.get.flatMap:
-                      _.foldMapM:
-                        case Chart.DrawResult(
-                              mt,
-                              mouseCalc,
-                              xScale,
-                              yScale,
-                              hovered
-                            ) =>
-                          val mp0 = mouseCalc(md)
-                          val mpy = mt.invertY(mp0.y)
-                          val y = yScale.inverse(mpy)
-                          draggedPoint.get.flatMap:
-                            _.foldMapM: dragged =>
-                              store.state.get
-                                .map(_.chart.trace)
-                                .flatMap:
-                                  _.foldMapM:
-                                    _.points
-                                      .find(_.x == dragged.x)
-                                      .foldMapM: found =>
-                                        store.dispatch:
-                                          Action.UpdatePoint(found, y)
+                      _.foldMapM: draw =>
+                        draggedPoint.get.flatMap:
+                          _.foldMapM: dragged =>
+                            store.state.get
+                              .map(_.chart.trace)
+                              .flatMap:
+                                _.foldMapM:
+                                  _.points
+                                    .find(_.x == dragged.x)
+                                    .foldMapM: found =>
+                                      store.dispatch:
+                                        Action.UpdatePoint(found, draw.mouse.y)
               )
         .compile
         .drain
