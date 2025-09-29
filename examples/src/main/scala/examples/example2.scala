@@ -34,8 +34,6 @@ import org.http4s.Uri
 import org.scalajs.dom
 import org.scalajs.dom.MouseEvent
 
-import math.abs
-
 object Chart:
 
   final case class Config(
@@ -197,12 +195,9 @@ object Chart:
     for
       nPoints <- Gen.between(5, 50)
       x0 <- Gen.normal
-      xs <- Gen.normal
+      points <- (Gen.normal, Gen.normal).tupled
         .replicateA(nPoints)
-        .map(_.map(math.abs(_)))
-        .map(dxs => dxs.scanLeft(x0)(_ - _))
-      ys <- Gen.pure(xs.map(math.pow(_, 2)))
-      points <- Gen.pure((xs zip ys).map(Point.apply))
+        .map(_.map((x, y) => Point(x, y)))
       fill <- Gen.boolean
       color <- Color.genHue(60.0, 60.0)
       markerSize = 12
@@ -219,29 +214,28 @@ object Chart:
       genS: Gen.S = Gen.setSeed(17L).run(Gen.init)(0)
   )
 
-case class State[F[_]](
+case class State(
     uri: Option[Uri] = None,
-    canvas: Option[fs2.dom.HtmlCanvasElement[F]] = None,
+    canvas: Option[dom.HTMLCanvasElement] = None,
     chart: Chart.State = Chart.State()
 )
 
-sealed trait Action[F[_]]
+sealed trait Action
 
 object Action:
 
-  case class Noop[F[_]]() extends Action[F]
+  case class Noop() extends Action
 
-  case class SetCanvas[F[_]](canvas: fs2.dom.HtmlCanvasElement[F])
-      extends Action[F]
+  case class SetCanvas(canvas: dom.HTMLCanvasElement) extends Action
 
-  case class SetData[F[_]](traces: Chart.Trace) extends Action[F]
+  case class SetData(traces: Chart.Trace) extends Action
 
-  case class RandomizeData[F[_]]() extends Action[F]
+  case class RandomizeData() extends Action
 
-  case class UpdatePoint[F[_]](old: Point, upd: Point) extends Action[F]
+  case class UpdatePoint(old: Point, upd: Point) extends Action
 
-trait View[F[_]] extends Buttons[State[F], Action[F]]:
-  dsl: ff4s.Dsl[State[F], Action[F]] =>
+trait View[F[_]] extends Buttons[State, Action]:
+  dsl: ff4s.Dsl[State, Action] =>
 
   import html.*
 
@@ -251,28 +245,28 @@ trait View[F[_]] extends Buttons[State[F], Action[F]]:
       h1(cls := "m-4 text-3xl", "ff4s-canvas"),
       div(
         cls := "m-2 flex flex-col items-center gap-2",
-        h2(cls := "text-2xl", "Chart (Drag a point 🚀)"),
+        h2(cls := "text-2xl", "Chart"),
         canvasTag(
           cls := "border rounded border-gray-500 sm:w-[500px] sm:h-[400px] md:w-[600px] md:h-[500px] lg:w-[800px] lg:h-[600px] w-[300px] h-[300px]",
-          idAttr := "chart-id",
-          key := "chart-id",
+          idAttr := "chart",
+          key := "chart",
           insertHook := (el =>
-            Action.SetCanvas(el.asInstanceOf[fs2.dom.HtmlCanvasElement[F]])
+            Action.SetCanvas(el.asInstanceOf[dom.HTMLCanvasElement])
           )
         ),
-        "Use your mouse or touchpad to pan and zoom.",
+        "Use your mouse or touchpad to zoom and drag points 🚀.",
         btn("randomize", Action.RandomizeData())
       )
     )
 
 class App[F[_]: Dom](using F: Async[F])
-    extends ff4s.App[F, State[F], Action[F]]
+    extends ff4s.App[F, State, Action]
     with View[F]:
 
   override val store = for
     dispatcher <- Dispatcher.sequential[F]
 
-    store <- ff4s.Store[F, State[F], Action[F]](State())(store =>
+    store <- ff4s.Store[F, State, Action](State())(store =>
       case (Action.Noop(), state) => state -> F.unit
       case (Action.RandomizeData(), state) =>
         val (nextState, traces) =
@@ -327,7 +321,6 @@ class App[F[_]: Dom](using F: Async[F])
         .evalMap: canvas =>
           F.delay:
             canvas
-              .asInstanceOf[dom.HTMLCanvasElement]
               .addEventListener[dom.MouseEvent](
                 "mouseup",
                 md =>
@@ -347,7 +340,6 @@ class App[F[_]: Dom](using F: Async[F])
         .evalMap: canvas =>
           F.delay:
             canvas
-              .asInstanceOf[dom.HTMLCanvasElement]
               .addEventListener[dom.MouseEvent](
                 "mousedown",
                 md =>
@@ -369,7 +361,6 @@ class App[F[_]: Dom](using F: Async[F])
         .evalMap: canvas =>
           F.delay:
             canvas
-              .asInstanceOf[dom.HTMLCanvasElement]
               .addEventListener[dom.MouseEvent](
                 "mousemove",
                 md =>
@@ -397,7 +388,7 @@ class App[F[_]: Dom](using F: Async[F])
             Chart(
               Chart.config,
               store.state.map(_.chart.trace.get),
-              canvas,
+              canvas.asInstanceOf[fs2.dom.HtmlCanvasElement[F]],
               dispatcher
             )
           )
