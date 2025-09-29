@@ -16,8 +16,6 @@
 
 package ff4s.canvas
 
-import math.pow
-
 final case class Point(x: Double, y: Double)
 
 object Point:
