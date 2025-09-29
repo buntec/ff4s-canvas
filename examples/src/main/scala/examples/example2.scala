@@ -306,12 +306,24 @@ class App[F[_]: Dom](using F: Async[F])
       .drain
       .background
 
+    _ <- store.state
+      .map(_.canvas)
+      .discrete
+      .changes(Eq.fromUniversalEquals)
+      .unNone
+      .evalMap: p =>
+        F.delay:
+          println("canvas update")
+      .compile
+      .drain
+      .background
+
     _ <-
       store.state
         .map(_.canvas)
         .discrete
-        .unNone
         .changes(Eq.fromUniversalEquals)
+        .unNone
         .evalMap: canvas =>
           F.delay:
             canvas
@@ -330,8 +342,8 @@ class App[F[_]: Dom](using F: Async[F])
       store.state
         .map(_.canvas)
         .discrete
-        .unNone
         .changes(Eq.fromUniversalEquals)
+        .unNone
         .evalMap: canvas =>
           F.delay:
             canvas
@@ -352,8 +364,8 @@ class App[F[_]: Dom](using F: Async[F])
       store.state
         .map(_.canvas)
         .discrete
-        .unNone
         .changes(Eq.fromUniversalEquals)
+        .unNone
         .evalMap: canvas =>
           F.delay:
             canvas
@@ -377,8 +389,8 @@ class App[F[_]: Dom](using F: Async[F])
     _ <- store.state
       .map(_.canvas)
       .discrete
-      .unNone
       .changes(Eq.fromUniversalEquals)
+      .unNone
       .switchMap(canvas =>
         Stream
           .resource(
