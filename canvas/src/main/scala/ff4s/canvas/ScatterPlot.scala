@@ -220,7 +220,7 @@ object ScatterPlot:
           _ <- kvGet[Point]("hover").flatMap(_.foldMapM(tooltip))
           _ <- Monad[Draw].whenA(config.legend)(legend(traces))
         yield ()
-      .map(Option(_))
+      .as(Option.empty[Unit])
 
     render.loop(
       elm,
