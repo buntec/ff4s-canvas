@@ -312,10 +312,10 @@ class App[F[_]: Dom](using F: Async[F])
         .discrete
         .unNone
         .changes(Eq.fromUniversalEquals)
-        .evalMap: _ =>
+        .evalMap: canvas =>
           F.delay:
-            dom.document
-              .getElementById("chart-id")
+            canvas
+              .asInstanceOf[dom.HTMLCanvasElement]
               .addEventListener[dom.MouseEvent](
                 "mouseup",
                 md =>
@@ -332,10 +332,10 @@ class App[F[_]: Dom](using F: Async[F])
         .discrete
         .unNone
         .changes(Eq.fromUniversalEquals)
-        .evalMap: _ =>
+        .evalMap: canvas =>
           F.delay:
-            dom.document
-              .getElementById("chart-id")
+            canvas
+              .asInstanceOf[dom.HTMLCanvasElement]
               .addEventListener[dom.MouseEvent](
                 "mousedown",
                 md =>
@@ -354,10 +354,10 @@ class App[F[_]: Dom](using F: Async[F])
         .discrete
         .unNone
         .changes(Eq.fromUniversalEquals)
-        .evalMap: _ =>
+        .evalMap: canvas =>
           F.delay:
-            dom.document
-              .getElementById("chart-id")
+            canvas
+              .asInstanceOf[dom.HTMLCanvasElement]
               .addEventListener[dom.MouseEvent](
                 "mousemove",
                 md =>
