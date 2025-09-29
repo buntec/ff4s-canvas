@@ -19,14 +19,17 @@ package example2
 
 import cats.effect.Async
 import cats.effect.implicits.*
+import cats.effect.kernel.Async
+import cats.effect.kernel.Resource
 import cats.effect.std.Dispatcher
 import cats.kernel.Eq
 import cats.syntax.all.*
-import examples.VolSkewChart.DrawResult
 import ff4s.canvas.*
+import ff4s.canvas.syntax.*
 import fs2.Stream
-import fs2.concurrent.SignallingRef
+import fs2.concurrent.*
 import fs2.dom.Dom
+import fs2.dom.HtmlCanvasElement
 import monocle.syntax.all.*
 import org.http4s.Uri
 import org.scalajs.dom
@@ -34,9 +37,162 @@ import org.scalajs.dom.MouseEvent
 
 import math.abs
 
-object volskew:
+object Chart:
 
-  val config = VolSkewChart.Config(
+  final case class Config(
+      nXTicks: Int,
+      nYTicks: Int,
+      tickFont: Font,
+      axisColor: Color,
+      textColor: Color,
+      gridColor: Color
+  )
+
+  final case class Trace(points: List[Point], marker: Marker)
+
+  object Trace:
+    given Eq[Trace] = Eq.fromUniversalEquals
+    given Transition[Trace] = Transition.transition((tr1, tr2, t) =>
+      Trace(
+        Transition[List[Point]](tr1.points, tr2.points, t),
+        Transition[Marker](tr1.marker, tr2.marker, t)
+      )
+    )
+
+  final case class DrawResult(
+      transform: Transform,
+      mousePosCalc: MouseEvent => Point,
+      xScale: Scale,
+      yScale: Scale,
+      hoveredPoint: Option[Point]
+  )
+
+  def apply[F[_]: Dom](
+      config: Config,
+      trace: Signal[F, Trace],
+      elm: HtmlCanvasElement[F],
+      dispatcher: Dispatcher[F]
+  )(using F: Async[F]): Resource[F, Signal[F, Option[DrawResult]]] =
+
+    def tooltip(hover: Point): Draw[Unit] =
+      import Draw.*
+      for
+        _ <- save
+        w <- width
+        h <- height
+        mp0 <- mousePos
+        mt <- marginTransform
+        mp = mt.invert(mp0)
+        _ <- setFillStyle(config.textColor)
+        _ <- setFont(config.tickFont)
+        _ <- fillText(
+          f"x=${hover.x}%.2f, y=${hover.y}%.2f",
+          mp.x + 0.02 * w,
+          mp.y - 0.02 * h
+        )
+        _ <- restore
+      yield ()
+
+    val drawFrame = (t: DOMHighResTimeStamp, trace: Trace) =>
+      import Draw.*
+      val nPoints = trace.points.length
+      if nPoints > 0 then
+        val xMin = trace.points.map(_.x).min
+        val xMax = trace.points.map(_.x).max
+        val yMin = trace.points.map(_.y).min
+        val yMax = trace.points.map(_.y).max
+        for
+          _ <- save
+          w <- width
+          h <- height
+          xScale0 = Scale
+            .linear(
+              Scale.Domain(xMin, xMax),
+              Scale.Range(0, w)
+            )
+            .getOrElse(throw new Exception("failed to build x-scale"))
+          yScale0 = Scale
+            .linear(
+              Scale.Domain(yMin, yMax),
+              Scale.Range(h, 0)
+            )
+            .getOrElse(throw new Exception("failed to build y-scale"))
+          trans <- transform
+          xScale = trans
+            .rescaleX(xScale0)
+            .getOrElse(throw new Exception("failed to rescale x-scale"))
+          yScale = trans
+            .rescaleY(yScale0)
+            .getOrElse(throw new Exception("failed to rescale y-scale"))
+          xTickSize = 0.01 * h
+          yTickSize = 0.01 * w
+          _ <- Axes(
+            w,
+            h,
+            xTickSize,
+            yTickSize,
+            xScale,
+            yScale,
+            config.nXTicks,
+            config.nYTicks,
+            config.tickFont,
+            config.axisColor,
+            config.textColor,
+            config.gridColor
+          ).draw(Point(0, 0))
+
+          // clip everything outside axes region
+          _ <- beginPath
+          _ <- rect(yTickSize, 0, w - yTickSize, h - xTickSize)
+          _ <- clip
+
+          mp <- mousePos
+          _ <- kvDelete("hover") 
+          _ <-
+            trace.points.traverse_ : point =>
+              val at = Point(xScale(point.x), yScale(point.y))
+              val boundingPath = trace.marker.boundingPath(at)
+              isPointInPath(
+                boundingPath,
+                mp.x,
+                mp.y,
+                FillRule.Nonzero
+              ).flatMap: isHover =>
+                if isHover then
+                  val c0 = trace.marker.toColor
+                  val marker = trace.marker.withColor(c0.lighten(20))
+                  for
+                    _ <- kvPut("hover", point)
+                    _ <- save
+                    _ <- setShadowColor(c0)
+                    _ <- setShadowBlur(trace.marker.toSize / 2)
+                    _ <- marker.draw(at)
+                    _ <- restore
+                  yield ()
+                else trace.marker.draw(at)
+
+          _ <- restore
+          hoveredPoint <- kvGet[Point]("hover")
+          _ <- hoveredPoint.foldMapM(tooltip)
+          transform <- marginTransform
+          mousePosCalc <- mousePosCalc
+        yield Some(
+          DrawResult(transform, mousePosCalc, xScale, yScale, hoveredPoint)
+        )
+      else Draw.pure(Option.empty[DrawResult])
+
+    render.loop(
+      elm,
+      dispatcher,
+      trace,
+      drawFrame,
+      render.Settings(
+        margins = Margins.uniformRelative(0.05),
+        disableDrag = true
+      )
+    )
+
+  val config = Chart.Config(
     nXTicks = 10,
     nYTicks = 10,
     tickFont = Font(FontSize.Px(12), FontFamily.Name("Roboto"))
@@ -46,7 +202,7 @@ object volskew:
     axisColor = Color.Silver
   )
 
-  val genTrace: Gen[VolSkewChart.Trace] =
+  val genTrace: Gen[Chart.Trace] =
     for
       nPoints <- Gen.between(5, 50)
       x0 <- Gen.normal
@@ -65,17 +221,17 @@ object volskew:
         Marker.Square(markerSize, color, fill),
         Marker.Cross(markerSize, color)
       )
-    yield VolSkewChart.Trace(points, marker)
+    yield Chart.Trace(points, marker)
 
   case class State(
-      trace: Option[VolSkewChart.Trace] = None,
+      trace: Option[Chart.Trace] = None,
       genS: Gen.S = Gen.setSeed(17L).run(Gen.init)(0)
   )
 
 case class State[F[_]](
     uri: Option[Uri] = None,
     canvas: Option[fs2.dom.HtmlCanvasElement[F]] = None,
-    volskewPlot: volskew.State = volskew.State()
+    chart: Chart.State = Chart.State()
 )
 
 sealed trait Action[F[_]]
@@ -87,8 +243,7 @@ object Action:
   case class SetCanvas[F[_]](canvas: fs2.dom.HtmlCanvasElement[F])
       extends Action[F]
 
-  case class SetVolSkewChatData[F[_]](traces: VolSkewChart.Trace)
-      extends Action[F]
+  case class SetData[F[_]](traces: Chart.Trace) extends Action[F]
 
   case class RandomizeData[F[_]]() extends Action[F]
 
@@ -105,11 +260,11 @@ trait View[F[_]] extends Buttons[State[F], Action[F]]:
       h1(cls := "m-4 text-3xl", "ff4s-canvas"),
       div(
         cls := "m-2 flex flex-col items-center gap-2",
-        h2(cls := "text-2xl", "Vol Skew Plot"),
+        h2(cls := "text-2xl", "Chart"),
         canvasTag(
           cls := "border rounded border-gray-500 sm:w-[500px] sm:h-[400px] md:w-[600px] md:h-[500px] lg:w-[800px] lg:h-[600px] w-[300px] h-[300px]",
-          idAttr := "volskew-plot",
-          key := "volskew-plot",
+          idAttr := "chart-id",
+          key := "chart-id",
           insertHook := (el =>
             Action.SetCanvas(el.asInstanceOf[fs2.dom.HtmlCanvasElement[F]])
           )
@@ -130,26 +285,25 @@ class App[F[_]: Dom](using F: Async[F])
       case (Action.Noop(), state) => state -> F.unit
       case (Action.RandomizeData(), state) =>
         val (nextState, traces) =
-          volskew.genTrace
-            .run(state.volskewPlot.genS)
-        state.focus(_.volskewPlot.genS).replace(nextState) ->
-          store.dispatch(Action.SetVolSkewChatData(traces))
-      case (Action.SetVolSkewChatData(trace), state) =>
-        state.focus(_.volskewPlot.trace).replace(trace.some) -> F.unit
+          Chart.genTrace.run(state.chart.genS)
+        state.focus(_.chart.genS).replace(nextState) ->
+          store.dispatch(Action.SetData(traces))
+      case (Action.SetData(trace), state) =>
+        state.focus(_.chart.trace).replace(trace.some) -> F.unit
       case (Action.SetCanvas(canvas), state) =>
         state.copy(canvas = canvas.some) -> F.unit
       case (Action.UpdatePoint(point, newY), state) =>
         state
-          .focus(_.volskewPlot.trace)
+          .focus(_.chart.trace)
           .replace(
-            state.volskewPlot.trace.map: trace =>
+            state.chart.trace.map: trace =>
               trace.copy(points =
                 trace.points.filterNot(_.x == point.x) :+ Point(point.x, newY)
               )
           ) -> F.unit
     )
 
-    drawRes <- SignallingRef.of[F, Option[DrawResult]](None).toResource
+    drawRes <- SignallingRef.of[F, Option[Chart.DrawResult]](None).toResource
 
     draggedPoint <- SignallingRef.of[F, Option[Point]](None).toResource
 
@@ -162,7 +316,7 @@ class App[F[_]: Dom](using F: Async[F])
         .evalMap: _ =>
           F.delay:
             dom.document
-              .getElementById("volskew-plot")
+              .getElementById("chart-id")
               .addEventListener[dom.MouseEvent](
                 "mouseup",
                 md =>
@@ -182,35 +336,14 @@ class App[F[_]: Dom](using F: Async[F])
         .evalMap: _ =>
           F.delay:
             dom.document
-              .getElementById("volskew-plot")
+              .getElementById("chart-id")
               .addEventListener[dom.MouseEvent](
                 "mousedown",
                 md =>
                   dispatcher.unsafeRunAndForget:
                     drawRes.get.flatMap:
-                      _.foldMapM:
-                        case DrawResult(
-                              transform,
-                              mouseCalc,
-                              xScale,
-                              yScale,
-                              hovered
-                            ) =>
-                          val mp0 = mouseCalc(md)
-                          val mp = transform.invert(mp0)
-                          val x = xScale.inverse(mp.x)
-                          val y = yScale.inverse(mp.y)
-                          val mouse = Point(x, y)
-                          store.state.get
-                            .map(_.volskewPlot.trace)
-                            .flatMap:
-                              _.foldMapM:
-                                _.points
-                                  .minByOption(_.distance2To(mouse))
-                                  .foldMapM: found =>
-                                    hovered.foldMapM: hover =>
-                                      F.whenA(found == hover):
-                                        draggedPoint.set(Some(hover))
+                      _.foldMapM: draw =>
+                        draggedPoint.set(draw.hoveredPoint)
               )
         .compile
         .drain
@@ -225,14 +358,14 @@ class App[F[_]: Dom](using F: Async[F])
         .evalMap: _ =>
           F.delay:
             dom.document
-              .getElementById("volskew-plot")
+              .getElementById("chart-id")
               .addEventListener[dom.MouseEvent](
                 "mousemove",
                 md =>
                   dispatcher.unsafeRunAndForget:
                     drawRes.get.flatMap:
                       _.foldMapM:
-                        case DrawResult(
+                        case Chart.DrawResult(
                               mt,
                               mouseCalc,
                               xScale,
@@ -245,7 +378,7 @@ class App[F[_]: Dom](using F: Async[F])
                           draggedPoint.get.flatMap:
                             _.foldMapM: dragged =>
                               store.state.get
-                                .map(_.volskewPlot.trace)
+                                .map(_.chart.trace)
                                 .flatMap:
                                   _.foldMapM:
                                     _.points
@@ -266,9 +399,9 @@ class App[F[_]: Dom](using F: Async[F])
       .switchMap(canvas =>
         Stream
           .resource(
-            VolSkewChart(
-              volskew.config,
-              store.state.map(_.volskewPlot.trace.get),
+            Chart(
+              Chart.config,
+              store.state.map(_.chart.trace.get),
               canvas,
               dispatcher
             )
