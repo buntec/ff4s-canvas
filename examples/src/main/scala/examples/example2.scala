@@ -282,7 +282,8 @@ class App[F[_]: Dom](using F: Async[F])
           .focus(_.chart.trace)
           .replace(
             state.chart.trace.map: trace =>
-              trace.copy(points = trace.points.filterNot(_ == old) :+ upd)
+              trace.copy(points = trace.points.map: p =>
+                if p == old then upd else p)
           ) -> F.unit
     )
 
