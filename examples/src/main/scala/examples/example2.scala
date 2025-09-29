@@ -324,7 +324,7 @@ class App[F[_]: Dom](using F: Async[F])
             canvas
               .addEventListener[dom.MouseEvent](
                 "mouseup",
-                md =>
+                _ =>
                   dispatcher.unsafeRunAndForget:
                     draggedPoint.set(None)
               )
@@ -343,7 +343,7 @@ class App[F[_]: Dom](using F: Async[F])
             canvas
               .addEventListener[dom.MouseEvent](
                 "mousedown",
-                md =>
+                _ =>
                   dispatcher.unsafeRunAndForget:
                     drawRes.get.flatMap:
                       _.foldMapM: draw =>
@@ -364,7 +364,7 @@ class App[F[_]: Dom](using F: Async[F])
             canvas
               .addEventListener[dom.MouseEvent](
                 "mousemove",
-                md =>
+                _ =>
                   dispatcher.unsafeRunAndForget:
                     drawRes.get.flatMap:
                       _.foldMapM: draw =>
