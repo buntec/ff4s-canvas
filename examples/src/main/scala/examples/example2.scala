@@ -298,6 +298,16 @@ class App[F[_]: Dom](using F: Async[F])
 
     draggedPoint <- SignallingRef.of[F, Option[Point]](None).toResource
 
+    _ <- draggedPoint.discrete
+      .changes(Eq.fromUniversalEquals)
+      .unNone
+      .evalMap: p =>
+        F.delay:
+          println(s"dragged x:${p.x}, y: ${p.y}")
+      .compile
+      .drain
+      .background
+
     _ <-
       store.state
         .map(_.canvas)
