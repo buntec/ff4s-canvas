@@ -238,7 +238,7 @@ object Action:
 
   case class RandomizeData[F[_]]() extends Action[F]
 
-  case class UpdatePoint[F[_]](p: Point, newY: Double) extends Action[F]
+  case class UpdatePoint[F[_]](old: Point, upd: Point) extends Action[F]
 
 trait View[F[_]] extends Buttons[State[F], Action[F]]:
   dsl: ff4s.Dsl[State[F], Action[F]] =>
@@ -283,14 +283,12 @@ class App[F[_]: Dom](using F: Async[F])
         state.focus(_.chart.trace).replace(trace.some) -> F.unit
       case (Action.SetCanvas(canvas), state) =>
         state.copy(canvas = canvas.some) -> F.unit
-      case (Action.UpdatePoint(point, newY), state) =>
+      case (Action.UpdatePoint(old, upd), state) =>
         state
           .focus(_.chart.trace)
           .replace(
             state.chart.trace.map: trace =>
-              trace.copy(points =
-                trace.points.filterNot(_.x == point.x) :+ Point(point.x, newY)
-              )
+              trace.copy(points = trace.points.filterNot(_ == old) :+ upd)
           ) -> F.unit
     )
 
@@ -367,16 +365,10 @@ class App[F[_]: Dom](using F: Async[F])
                     drawRes.get.flatMap:
                       _.foldMapM: draw =>
                         draggedPoint.get.flatMap:
-                          _.foldMapM: dragged =>
-                            store.state.get
-                              .map(_.chart.trace)
-                              .flatMap:
-                                _.foldMapM:
-                                  _.points
-                                    .find(_.x == dragged.x)
-                                    .foldMapM: found =>
-                                      store.dispatch:
-                                        Action.UpdatePoint(found, draw.mouse.y)
+                          _.foldMapM: old =>
+                            draggedPoint.set(Some(draw.mouse)) *>
+                              store.dispatch:
+                                Action.UpdatePoint(old, draw.mouse)
               )
         .compile
         .drain
