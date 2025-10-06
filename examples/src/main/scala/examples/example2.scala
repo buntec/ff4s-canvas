@@ -28,7 +28,7 @@ import ff4s.canvas.syntax.*
 import fs2.Stream
 import fs2.concurrent.*
 import fs2.dom.Dom
-import fs2.dom.HtmlCanvasElement
+
 import monocle.syntax.all.*
 import org.http4s.Uri
 import org.scalajs.dom
@@ -61,7 +61,7 @@ object Chart:
   def apply[F[_]: Dom](
       config: Config,
       trace: Signal[F, Trace],
-      elm: HtmlCanvasElement[F],
+      elm: fs2.dom.HtmlCanvasElement[F],
       dispatcher: Dispatcher[F]
   )(using F: Async[F]): Resource[F, Signal[F, Option[DrawResult]]] =
 
