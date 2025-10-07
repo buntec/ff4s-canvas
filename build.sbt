@@ -3,7 +3,7 @@ Global / resolvers += "Sonatype S01 OSS Snapshots" at "https://s01.oss.sonatype.
 
 ThisBuild / tlBaseVersion := "0.0"
 
-lazy val scala3 = "3.3.1"
+lazy val scala3 = "3.7.3"
 ThisBuild / scalaVersion := scala3
 ThisBuild / crossScalaVersions := Seq(scala3)
 ThisBuild / semanticdbEnabled := true
@@ -22,14 +22,14 @@ ThisBuild / tlFatalWarnings := false
 
 val site: TaskKey[File] = taskKey[File]("Generate static site")
 
-lazy val scalajsDomVersion = "2.8.0"
-lazy val circeVersion = "0.14.6"
-lazy val catsVersion = "2.10.0"
-lazy val catsEffectVersion = "3.5.3"
-lazy val fs2Version = "3.9.4"
+lazy val scalajsDomVersion = "2.8.1"
+lazy val circeVersion = "0.14.15"
+lazy val catsVersion = "2.13.0"
+lazy val catsEffectVersion = "3.6.3"
+lazy val fs2Version = "3.12.2"
 lazy val fs2DomVersion = "0.2.1"
-lazy val ff4sVersion = "0.24.0"
-lazy val monocleVersion = "3.2.0"
+lazy val ff4sVersion = "0.25.0"
+lazy val monocleVersion = "3.3.0"
 
 lazy val root =
   tlCrossRootProject.aggregate(`ff4s-canvas`, examples)

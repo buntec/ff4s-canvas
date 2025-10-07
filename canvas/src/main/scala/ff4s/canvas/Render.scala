@@ -112,7 +112,7 @@ def loop[F[_]: Dom, D: Eq: Transition](
                     ) *> cleanup)
                       .foldMap(compiler)
                     if keepGoing then {
-                      handle = Some(dom.window.requestAnimationFrame(draw _))
+                      handle = Some(dom.window.requestAnimationFrame(draw(_)))
                     }
             )
 

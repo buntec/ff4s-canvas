@@ -89,7 +89,7 @@ trait View[F[_]] extends Buttons[State[F], Action[F]]:
 
   import html.*
 
-  val view = useState: state =>
+  val view = useState: _ =>
     div(
       cls := "min-h-screen flex flex-col items-center bg-gray-800 text-gray-100 font-sans font-thin",
       h1(cls := "m-4 text-3xl", "ff4s-canvas"),
@@ -136,7 +136,7 @@ class App[F[_]: Dom](using F: Async[F])
       .map(_.canvas)
       .discrete
       .unNone
-      .changes(Eq.fromUniversalEquals)
+      .changes(using Eq.fromUniversalEquals)
       .switchMap(canvas =>
         Stream
           .resource(
