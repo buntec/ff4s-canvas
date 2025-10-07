@@ -221,10 +221,12 @@ object ScatterPlot:
           _ <- Monad[Draw].whenA(config.legend)(legend(traces))
         yield ()
 
-    render.loop(
-      elm,
-      dispatcher,
-      traces,
-      drawFrame,
-      render.Settings(margins = Margins.uniformRelative(0.05))
-    )
+    render
+      .loop(
+        elm,
+        dispatcher,
+        traces,
+        drawFrame,
+        render.Settings(margins = Margins.uniformRelative(0.05))
+      )
+      .as(())
