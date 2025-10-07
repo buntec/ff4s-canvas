@@ -28,7 +28,6 @@ import ff4s.canvas.syntax.*
 import fs2.Stream
 import fs2.concurrent.*
 import fs2.dom.Dom
-
 import monocle.syntax.all.*
 import org.http4s.Uri
 import org.scalajs.dom
@@ -167,8 +166,8 @@ object Chart:
           mouse <- (mousePos, marginTransform).tupled.map: (mp, mt) =>
             val mt0 = mt.invert(mp)
             Point(xScale.inverse(mt0.x), yScale.inverse(mt0.y))
-        yield Some(DrawResult(mouse, hovered))
-      else Draw.pure(Option.empty[DrawResult])
+        yield DrawResult(mouse, hovered)
+      else Draw.pure(DrawResult(Point(0, 0), None))
 
     render.loop(
       elm,
@@ -214,28 +213,29 @@ object Chart:
       genS: Gen.S = Gen.setSeed(17L).run(Gen.init)(0)
   )
 
-case class State(
+case class State[F[_]](
     uri: Option[Uri] = None,
-    canvas: Option[dom.HTMLCanvasElement] = None,
+    canvas: Option[fs2.dom.HtmlCanvasElement[F]] = None,
     chart: Chart.State = Chart.State()
 )
 
-sealed trait Action
+sealed trait Action[F[_]]
 
 object Action:
 
-  case class Noop() extends Action
+  case class Noop[F[_]]() extends Action[F]
 
-  case class SetCanvas(canvas: dom.HTMLCanvasElement) extends Action
+  case class SetCanvas[F[_]](canvas: fs2.dom.HtmlCanvasElement[F])
+      extends Action[F]
 
-  case class SetData(traces: Chart.Trace) extends Action
+  case class SetData[F[_]](traces: Chart.Trace) extends Action[F]
 
-  case class RandomizeData() extends Action
+  case class RandomizeData[F[_]]() extends Action[F]
 
-  case class UpdatePoint(old: Point, upd: Point) extends Action
+  case class UpdatePoint[F[_]](old: Point, upd: Point) extends Action[F]
 
-trait View[F[_]] extends Buttons[State, Action]:
-  dsl: ff4s.Dsl[State, Action] =>
+trait View[F[_]] extends Buttons[State[F], Action[F]]:
+  dsl: ff4s.Dsl[State[F], Action[F]] =>
 
   import html.*
 
@@ -251,7 +251,7 @@ trait View[F[_]] extends Buttons[State, Action]:
           idAttr := "chart",
           key := "chart",
           insertHook := (el =>
-            Action.SetCanvas(el.asInstanceOf[dom.HTMLCanvasElement])
+            Action.SetCanvas(el.asInstanceOf[fs2.dom.HtmlCanvasElement[F]])
           )
         ),
         "Use your mouse or touchpad to zoom and drag points 🚀.",
@@ -260,13 +260,13 @@ trait View[F[_]] extends Buttons[State, Action]:
     )
 
 class App[F[_]: Dom](using F: Async[F])
-    extends ff4s.App[F, State, Action]
+    extends ff4s.App[F, State[F], Action[F]]
     with View[F]:
 
   override val store = for
     dispatcher <- Dispatcher.sequential[F]
 
-    store <- ff4s.Store[F, State, Action](State())(store =>
+    store <- ff4s.Store[F, State[F], Action[F]](State[F]())(store =>
       case (Action.Noop(), state) => state -> F.unit
       case (Action.RandomizeData(), state) =>
         val (nextState, traces) =
@@ -300,6 +300,7 @@ class App[F[_]: Dom](using F: Async[F])
         .evalMap: canvas =>
           F.delay:
             canvas
+              .asInstanceOf[dom.HTMLCanvasElement]
               .addEventListener[dom.MouseEvent](
                 "mouseup",
                 _ =>
@@ -319,6 +320,7 @@ class App[F[_]: Dom](using F: Async[F])
         .evalMap: canvas =>
           F.delay:
             canvas
+              .asInstanceOf[dom.HTMLCanvasElement]
               .addEventListener[dom.MouseEvent](
                 "mousedown",
                 _ =>
@@ -340,6 +342,7 @@ class App[F[_]: Dom](using F: Async[F])
         .evalMap: canvas =>
           F.delay:
             canvas
+              .asInstanceOf[dom.HTMLCanvasElement]
               .addEventListener[dom.MouseEvent](
                 "mousemove",
                 _ =>

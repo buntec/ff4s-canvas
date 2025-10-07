@@ -48,7 +48,7 @@ def loop[F[_]: Dom, D: Eq: Transition, R](
     canvas: HtmlCanvasElement[F],
     dispatcher: Dispatcher[F],
     data: Signal[F, D],
-    drawFrame: (DOMHighResTimeStamp, D) => Draw[Option[R]],
+    drawFrame: (DOMHighResTimeStamp, D) => Draw[R],
     config: Settings
 )(using F: Async[F]): Resource[F, Signal[F, Option[R]]] = for
 
@@ -116,7 +116,7 @@ def loop[F[_]: Dom, D: Eq: Transition, R](
                     if keepGoing then
                       handle = Some(dom.window.requestAnimationFrame(draw _))
                     drawResult
-                  .flatMap(drawResultS.set)
+                  .flatMap(res => drawResultS.set(Some(res)))
             )
 
           draw(0)
