@@ -12,7 +12,6 @@ ThisBuild / semanticdbVersion := scalafixSemanticdb.revision
 ThisBuild / organization := "io.github.buntec"
 ThisBuild / organizationName := "buntec"
 ThisBuild / startYear := Some(2023)
-ThisBuild / tlSonatypeUseLegacyHost := false
 
 ThisBuild / developers := List(
   tlGitHubDev("buntec", "Christoph Bunte")

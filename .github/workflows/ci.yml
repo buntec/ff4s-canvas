@@ -9,13 +9,14 @@ name: Continuous Integration
 
 on:
   pull_request:
-    branches: ["**", "!update/**", "!pr/**"]
+    branches: ['**', '!update/**', '!pr/**']
   push:
-    branches: ["**", "!update/**", "!pr/**"]
+    branches: ['**', '!update/**', '!pr/**']
     tags: [v*]
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 
 concurrency:
   group: ${{ github.workflow }} @ ${{ github.ref }}
@@ -23,10 +24,10 @@ concurrency:
 
 jobs:
   build:
-    name: Build and Test
+    name: Test
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-22.04]
         scala: [3]
         java: [temurin@8]
         project: [rootJS]
@@ -34,14 +35,17 @@ jobs:
     timeout-minutes: 60
     steps:
       - name: Checkout current branch (full)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
+
+      - name: Setup sbt
+        uses: sbt/setup-sbt@v1
 
       - name: Setup Java (temurin@8)
         id: setup-java-temurin-8
         if: matrix.java == 'temurin@8'
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 8
@@ -55,7 +59,7 @@ jobs:
         run: sbt githubWorkflowCheck
 
       - name: Check headers and formatting
-        if: matrix.java == 'temurin@8' && matrix.os == 'ubuntu-latest'
+        if: matrix.java == 'temurin@8' && matrix.os == 'ubuntu-22.04'
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' headerCheckAll scalafmtCheckAll 'project /' scalafmtSbtCheck
 
       - name: scalaJSLink
@@ -66,11 +70,11 @@ jobs:
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' test
 
       - name: Check binary compatibility
-        if: matrix.java == 'temurin@8' && matrix.os == 'ubuntu-latest'
+        if: matrix.java == 'temurin@8' && matrix.os == 'ubuntu-22.04'
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' mimaReportBinaryIssues
 
       - name: Generate API documentation
-        if: matrix.java == 'temurin@8' && matrix.os == 'ubuntu-latest'
+        if: matrix.java == 'temurin@8' && matrix.os == 'ubuntu-22.04'
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' doc
 
       - name: Make target directories
@@ -94,19 +98,22 @@ jobs:
     if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-22.04]
         java: [temurin@8]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout current branch (full)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
+
+      - name: Setup sbt
+        uses: sbt/setup-sbt@v1
 
       - name: Setup Java (temurin@8)
         id: setup-java-temurin-8
         if: matrix.java == 'temurin@8'
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 8
@@ -117,7 +124,7 @@ jobs:
         run: sbt +update
 
       - name: Download target directories (3, rootJS)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: target-${{ matrix.os }}-${{ matrix.java }}-3-rootJS
 
@@ -152,22 +159,25 @@ jobs:
 
   dependency-submission:
     name: Submit Dependencies
-    if: github.event_name != 'pull_request'
+    if: github.event.repository.fork == false && github.event_name != 'pull_request'
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-22.04]
         java: [temurin@8]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout current branch (full)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
+
+      - name: Setup sbt
+        uses: sbt/setup-sbt@v1
 
       - name: Setup Java (temurin@8)
         id: setup-java-temurin-8
         if: matrix.java == 'temurin@8'
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 8
