@@ -32,7 +32,7 @@ case class Transform(x: Double, y: Double, k: Double):
   def after(t: Transform): Transform =
     Transform(t.x * k + x, t.y * k + y, t.k * k)
 
-  def andThen(t: Transform): Transform = t.after(this)
+  infix def andThen(t: Transform): Transform = t.after(this)
 
   def applyToCtx: Draw[Unit] = Draw.translate(x, y) *> Draw.scale(k, k)
 

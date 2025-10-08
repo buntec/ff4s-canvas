@@ -83,7 +83,7 @@ object Chart:
         _ <- restore
       yield ()
 
-    val drawFrame = (t: DOMHighResTimeStamp, trace: Trace) =>
+    val drawFrame = (_: DOMHighResTimeStamp, trace: Trace) =>
       import Draw.*
       val nPoints = trace.points.length
       if nPoints > 0 then
@@ -239,7 +239,7 @@ trait View[F[_]] extends Buttons[State[F], Action[F]]:
 
   import html.*
 
-  val view = useState: state =>
+  val view = useState: _ =>
     div(
       cls := "min-h-screen flex flex-col items-center bg-gray-800 text-gray-100 font-sans font-thin",
       h1(cls := "m-4 text-3xl", "ff4s-canvas"),
@@ -295,7 +295,7 @@ class App[F[_]: Dom](using F: Async[F])
       store.state
         .map(_.canvas)
         .discrete
-        .changes(Eq.fromUniversalEquals)
+        .changes(using Eq.fromUniversalEquals)
         .unNone
         .evalMap: canvas =>
           F.delay:
@@ -315,7 +315,7 @@ class App[F[_]: Dom](using F: Async[F])
       store.state
         .map(_.canvas)
         .discrete
-        .changes(Eq.fromUniversalEquals)
+        .changes(using Eq.fromUniversalEquals)
         .unNone
         .evalMap: canvas =>
           F.delay:
@@ -337,7 +337,7 @@ class App[F[_]: Dom](using F: Async[F])
       store.state
         .map(_.canvas)
         .discrete
-        .changes(Eq.fromUniversalEquals)
+        .changes(using Eq.fromUniversalEquals)
         .unNone
         .evalMap: canvas =>
           F.delay:
@@ -362,7 +362,7 @@ class App[F[_]: Dom](using F: Async[F])
     _ <- store.state
       .map(_.canvas)
       .discrete
-      .changes(Eq.fromUniversalEquals)
+      .changes(using Eq.fromUniversalEquals)
       .unNone
       .switchMap(canvas =>
         Stream

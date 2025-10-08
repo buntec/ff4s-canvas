@@ -114,7 +114,7 @@ def loop[F[_]: Dom, D: Eq: Transition, R](
                       data0
                     ) <* cleanup).foldMap(compiler)
                     if keepGoing then
-                      handle = Some(dom.window.requestAnimationFrame(draw _))
+                      handle = Some(dom.window.requestAnimationFrame(draw(_)))
                     drawResult
                   .flatMap(res => drawResultS.set(Some(res)))
             )

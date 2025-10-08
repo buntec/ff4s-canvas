@@ -138,7 +138,7 @@ object ScatterPlot:
         _ <- restore
       yield ()
 
-    val drawFrame = (t: DOMHighResTimeStamp, traces: List[Trace]) =>
+    val drawFrame = (_: DOMHighResTimeStamp, traces: List[Trace]) =>
       import Draw.*
       val nPoints = traces.map(_.points.length).sum
       Monad[Draw].whenA(nPoints > 0):

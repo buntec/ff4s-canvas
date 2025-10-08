@@ -23,7 +23,7 @@ trait Buttons[S, A]:
       label0: String,
       onClick0: A,
       cls0: String,
-      isDisabled: S => Boolean = _ => false
+      isDisabled: S => Boolean
   ): V =
     import html.*
     useState: state =>
