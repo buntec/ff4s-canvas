@@ -4,10 +4,10 @@ Create [canvas](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API)-bas
 
 This is an experimental companion library to [ff4s](https://www.github.com/buntec/ff4s).
 
-Currently only supports Scala 3. No releases yet but you can try a [snapshot](https://s01.oss.sonatype.org/content/repositories/snapshots/io/github/buntec/ff4s-canvas_sjs1_3/):
+Currently only supports Scala 3.
 
-```
-Global / resolvers += "Sonatype S01 OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots"
+```scala
+libraryDependencies += "io.github.buntec" %%% "ff4s-canvas" % "0.0.1"
 ```
 
 ## Examples

@@ -27,7 +27,7 @@ lazy val catsVersion = "2.13.0"
 lazy val catsEffectVersion = "3.6.3"
 lazy val fs2Version = "3.12.2"
 lazy val fs2DomVersion = "0.2.1"
-lazy val ff4sVersion = "0.25.0"
+lazy val ff4sVersion = "0.26.1"
 lazy val monocleVersion = "3.3.0"
 
 lazy val root =
