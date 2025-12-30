@@ -69,20 +69,11 @@ case class State[F[_]](
     scatterPlot: scatter.State = scatter.State()
 )
 
-sealed trait Action[F[_]]
-
-object Action:
-
-  case class Noop[F[_]]() extends Action[F]
-
-  case class SetCanvas[F[_]](canvas: fs2.dom.HtmlCanvasElement[F])
-      extends Action[F]
-
-  case class SetScatterPlotData[F[_]](
-      traces: List[ScatterPlot.Trace]
-  ) extends Action[F]
-
-  case class RandomizeData[F[_]]() extends Action[F]
+enum Action[F[_]]:
+  case Noop()
+  case SetCanvas(canvas: fs2.dom.HtmlCanvasElement[F])
+  case SetScatterPlotData(traces: List[ScatterPlot.Trace])
+  case RandomizeData()
 
 trait View[F[_]] extends Buttons[State[F], Action[F]]:
   dsl: ff4s.Dsl[State[F], Action[F]] =>
