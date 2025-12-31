@@ -219,20 +219,12 @@ case class State[F[_]](
     chart: Chart.State = Chart.State()
 )
 
-sealed trait Action[F[_]]
-
-object Action:
-
-  case class Noop[F[_]]() extends Action[F]
-
-  case class SetCanvas[F[_]](canvas: fs2.dom.HtmlCanvasElement[F])
-      extends Action[F]
-
-  case class SetData[F[_]](traces: Chart.Trace) extends Action[F]
-
-  case class RandomizeData[F[_]]() extends Action[F]
-
-  case class UpdatePoint[F[_]](old: Point, upd: Point) extends Action[F]
+enum Action[F[_]]:
+  case Noop()
+  case SetCanvas(canvas: fs2.dom.HtmlCanvasElement[F])
+  case SetData(traces: Chart.Trace)
+  case RandomizeData()
+  case UpdatePoint(old: Point, upd: Point)
 
 trait View[F[_]] extends Buttons[State[F], Action[F]]:
   dsl: ff4s.Dsl[State[F], Action[F]] =>
