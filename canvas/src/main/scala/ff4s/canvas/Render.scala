@@ -30,8 +30,8 @@ import fs2.dom.HtmlCanvasElement
 import fs2.dom.ResizeObserver
 import org.scalajs.dom
 
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.duration.*
+import scala.concurrent.duration.FiniteDuration
 
 case class Settings(
     minZoom: Double = 0.2,
