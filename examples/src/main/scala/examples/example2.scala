@@ -283,79 +283,44 @@ class App[F[_]: Dom](using F: Async[F])
 
     draggedPoint <- SignallingRef.of[F, Option[Point]](None).toResource
 
-    _ <-
-      store.state
-        .map(_.canvas)
-        .discrete
-        .changes(using Eq.fromUniversalEquals)
-        .unNone
-        .evalMap: canvas =>
-          F.delay:
-            canvas
-              .asInstanceOf[dom.HTMLCanvasElement]
-              .addEventListener[dom.MouseEvent](
-                "mouseup",
-                _ =>
-                  dispatcher.unsafeRunAndForget:
-                    draggedPoint.set(None)
-              )
-        .compile
-        .drain
-        .background
-
-    _ <-
-      store.state
-        .map(_.canvas)
-        .discrete
-        .changes(using Eq.fromUniversalEquals)
-        .unNone
-        .evalMap: canvas =>
-          F.delay:
-            canvas
-              .asInstanceOf[dom.HTMLCanvasElement]
-              .addEventListener[dom.MouseEvent](
-                "mousedown",
-                _ =>
-                  dispatcher.unsafeRunAndForget:
-                    drawRes.get.flatMap:
-                      _.foldMapM: draw =>
-                        draggedPoint.set(draw.hovered)
-              )
-        .compile
-        .drain
-        .background
-
-    _ <-
-      store.state
-        .map(_.canvas)
-        .discrete
-        .changes(using Eq.fromUniversalEquals)
-        .unNone
-        .evalMap: canvas =>
-          F.delay:
-            canvas
-              .asInstanceOf[dom.HTMLCanvasElement]
-              .addEventListener[dom.MouseEvent](
-                "mousemove",
-                _ =>
-                  dispatcher.unsafeRunAndForget:
-                    drawRes.get.flatMap:
-                      _.foldMapM: draw =>
-                        draggedPoint.get.flatMap:
-                          _.foldMapM: old =>
-                            draggedPoint.set(Some(draw.mouse)) *>
-                              store.dispatch:
-                                Action.UpdatePoint(old, draw.mouse)
-              )
-        .compile
-        .drain
-        .background
-
     _ <- store.state
       .map(_.canvas)
       .discrete
       .changes(using Eq.fromUniversalEquals)
       .unNone
+      .evalTap: canvasF =>
+        val canvas = canvasF.asInstanceOf[dom.HTMLCanvasElement]
+        val addMouseUpListener = F.delay:
+          canvas.addEventListener[dom.MouseEvent](
+            "mouseup",
+            _ => dispatcher.unsafeRunAndForget(draggedPoint.set(None))
+          )
+        val addMouseDownListener = F.delay:
+          canvas.addEventListener[dom.MouseEvent](
+            "mousedown",
+            _ =>
+              dispatcher.unsafeRunAndForget(
+                drawRes.get.flatMap(
+                  _.foldMapM(draw => draggedPoint.set(draw.hovered))
+                )
+              )
+          )
+        val addMouseMoveListener = F.delay:
+          canvas.addEventListener[dom.MouseEvent](
+            "mousemove",
+            _ =>
+              dispatcher.unsafeRunAndForget(drawRes.get.flatMap(_.foldMapM:
+                draw =>
+                  draggedPoint.get.flatMap(
+                    _.foldMapM(old =>
+                      draggedPoint.set(Some(draw.mouse)) *> store.dispatch(
+                        Action.UpdatePoint(old, draw.mouse)
+                      )
+                    )
+                  )
+              ))
+          )
+        addMouseUpListener *> addMouseDownListener *> addMouseMoveListener
       .switchMap(canvas =>
         Stream
           .resource(
@@ -366,11 +331,7 @@ class App[F[_]: Dom](using F: Async[F])
               dispatcher
             )
           )
-          .evalMap:
-            _.discrete
-              .evalMap(drawRes.set)
-              .compile
-              .drain
+          .evalMap(_.discrete.evalMap(drawRes.set).compile.drain)
       )
       .compile
       .drain
