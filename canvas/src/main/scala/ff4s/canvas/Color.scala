@@ -143,7 +143,9 @@ object Color:
 
   // assumes h, s, l are in [0, 1]
   private def hslToRgb(h: Double, s: Double, l: Double): Rgb =
-    if s == 0 then Rgb((255 * l).toInt, (255 * l).toInt, (255 * l).toInt)
+    if s == 0 then
+      val v = math.round(255 * l).toInt
+      Rgb(v, v, v)
     else
       def hue2rgb(p: Double, q: Double, t0: Double): Double =
         val t = if t0 < 0 then t0 + 1 else if t0 > 1 then t0 - 1 else t0
