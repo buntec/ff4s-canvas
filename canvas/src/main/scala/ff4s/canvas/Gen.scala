@@ -88,7 +88,7 @@ object Gen:
 
   def printableChar: Gen[Char] = State: s =>
     val r = scala.util.Random(s)
-    val c = r.nextPrintableChar
+    val c = r.nextPrintableChar()
     (r.nextLong(), c)
 
   def alphaNumeric: Gen[Char] =

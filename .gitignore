@@ -4,5 +4,4 @@
 .bloop/
 target/
 metals.sbt
-.devenv
-/.direnv
+node_modules/

@@ -31,14 +31,14 @@ enum Marker:
   case Cross(size: Double, color: Color)
 
   def withSize(size: Double): Marker = this match
-    case Circle(_, color, fill) => Circle(size, color, fill)
+    case Circle(_, color, fill)                   => Circle(size, color, fill)
     case Triangle(_, color, fill, centered, isUp) =>
       Triangle(size, color, fill, centered, isUp)
     case Square(_, color, fill) => Square(size, color, fill)
     case Cross(_, color)        => Cross(size, color)
 
   def withColor(color: Color): Marker = this match
-    case Circle(size, _, fill) => Circle(size, color, fill)
+    case Circle(size, _, fill)                   => Circle(size, color, fill)
     case Triangle(size, _, fill, centered, isUp) =>
       Triangle(size, color, fill, centered, isUp)
     case Square(size, _, fill) => Square(size, color, fill)

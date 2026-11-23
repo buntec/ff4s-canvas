@@ -1,6 +1,5 @@
-val sbtTypelevelVersion = "0.8.1"
+val sbtTypelevelVersion = "0.8.7"
 addSbtPlugin("org.typelevel" % "sbt-typelevel" % sbtTypelevelVersion)
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.20.1")
-addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.14.3")
-addSbtPlugin("org.scalameta" % "sbt-mdoc" % "2.7.2")
-addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.6.3")
+addSbtPlugin("org.typelevel" % "sbt-typelevel-scalafix" % sbtTypelevelVersion)
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.23.0")
+addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.7.1")

@@ -123,8 +123,7 @@ def loop[F[_]: Dom, D: Eq: Transition, R](
 
           F.delay:
             keepGoing = false
-            handle.foreach(dom.window.cancelAnimationFrame(_))
-        )(identity)
+            handle.foreach(dom.window.cancelAnimationFrame(_)))(identity)
         .evalMap(_ => F.never)
     .compile
     .drain

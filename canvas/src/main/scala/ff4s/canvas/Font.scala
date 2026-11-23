@@ -66,8 +66,7 @@ object FontStyle:
   given Show[FontStyle] = Show.show(_ match
     case Normal  => "normal"
     case Italic  => "italic"
-    case Oblique => "oblique"
-  )
+    case Oblique => "oblique")
 
 enum FontVariant:
   case Normal, SmallCaps
@@ -75,8 +74,7 @@ enum FontVariant:
 object FontVariant:
   given Show[FontVariant] = Show.show(_ match
     case Normal    => "normal"
-    case SmallCaps => "small-caps"
-  )
+    case SmallCaps => "small-caps")
 
 enum FontWeight:
   case Number(weight: Int)
@@ -107,8 +105,7 @@ object FontWeight:
     case Black          => "900"
     case ExtraBlack     => "950"
     case Bolder         => "bolder"
-    case Lighter        => "lighter"
-  )
+    case Lighter        => "lighter")
 
 enum FontSize:
   case Medium
@@ -117,8 +114,7 @@ enum FontSize:
 object FontSize:
   given Show[FontSize] = Show.show(_ match
     case Medium => "medium"
-    case Px(n)  => show"${n}px"
-  )
+    case Px(n)  => show"${n}px")
 
 enum LineHeight:
   case Normal
@@ -127,8 +123,7 @@ enum LineHeight:
 object LineHeight:
   given Show[LineHeight] = Show.show(_ match
     case Normal      => "/normal"
-    case Unitless(n) => show"/$n"
-  )
+    case Unitless(n) => show"/$n")
 
 enum FontWidth:
   case Normal, UltraCondensed, ExtraCondensed, Condensed, SemiCondensed,
@@ -145,8 +140,7 @@ object FontWidth:
     case SemiExpanded   => "semi-expanded"
     case Expanded       => "expanded"
     case ExtraExpanded  => "extra-expanded"
-    case UltraExpanded  => "ultra-expanded"
-  )
+    case UltraExpanded  => "ultra-expanded")
 
 enum FontFamily:
   case SystemUI, Serif, SansSerif, Monospace, Cursive,
@@ -164,5 +158,4 @@ object FontFamily:
     case UISerif     => "ui-serif"
     case UISansSerif => "ui-sans-serif"
     case UIMonospace => "ui-monospace"
-    case Name(name)  => s"\"$name\""
-  )
+    case Name(name)  => s"\"$name\"")

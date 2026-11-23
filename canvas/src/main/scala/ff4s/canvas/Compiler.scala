@@ -134,7 +134,7 @@ private[canvas] object Compiler:
           case GetTransform()       => transform
           case GetMousePos()        => mousePos
           case GetMarginTransform() => marginTransform
-          case Clear() =>
+          case Clear()              =>
             ctx.save()
             ctx.setTransform(1, 0, 0, 1, 0, 0) // identity
             ctx.clearRect(0, 0, canvas.width, canvas.height)

@@ -78,9 +78,9 @@ object Path:
   private def compiler(p2d: Path2D): PathA ~> Id = new ~>[PathA, Id]:
     def apply[A](pa: PathA[A]): Id[A] = {
       pa match
-        case ClosePath()  => p2d.closePath()
-        case MoveTo(x, y) => p2d.moveTo(x, y)
-        case LineTo(x, y) => p2d.lineTo(x, y)
+        case ClosePath()                                 => p2d.closePath()
+        case MoveTo(x, y)                                => p2d.moveTo(x, y)
+        case LineTo(x, y)                                => p2d.lineTo(x, y)
         case BezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y) =>
           p2d.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y)
         case QuadraticCurveTo(cpx, cpy, x, y) =>
