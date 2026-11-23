@@ -80,5 +80,4 @@ object Scale:
 
         def withRange(range: Range): Option[Scale] = sqrt(d, range)
 
-        def withDomain(domain: Domain): Option[Scale] = sqrt(domain, r)
-      )
+        def withDomain(domain: Domain): Option[Scale] = sqrt(domain, r))

@@ -259,7 +259,7 @@ class App[F[_]: Dom](using F: Async[F])
     dispatcher <- Dispatcher.sequential[F]
 
     store <- ff4s.Store[F, State[F], Action[F]](State[F]())(store =>
-      case (Action.Noop(), state) => state -> F.unit
+      case (Action.Noop(), state)          => state -> F.unit
       case (Action.RandomizeData(), state) =>
         val (nextState, traces) =
           Chart.genTrace.run(state.chart.genS)
@@ -317,8 +317,7 @@ class App[F[_]: Dom](using F: Async[F])
                         Action.UpdatePoint(old, draw.mouse)
                       )
                     )
-                  )
-              ))
+                  )))
           )
         addMouseUpListener *> addMouseDownListener *> addMouseMoveListener
       .switchMap(canvas =>
