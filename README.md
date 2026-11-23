@@ -7,7 +7,7 @@ This is an experimental companion library to [ff4s](https://www.github.com/bunte
 Currently only supports Scala 3 (3.10 or newer, like ff4s 0.27).
 
 ```scala
-libraryDependencies += "io.github.buntec" %%% "ff4s-canvas" % "0.0.1"
+libraryDependencies += "io.github.buntec" %%% "ff4s-canvas" % "0.1.0"
 ```
 
 ## Examples
